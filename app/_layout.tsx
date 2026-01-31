@@ -1,24 +1,34 @@
-import { useEffect } from 'react';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '../src/store/auth';
+import { ErrorBoundary } from '../src/components/ui/ErrorBoundary';
 
-export default function RootLayout() {
+function RootLayoutNav() {
   const { isAuthenticated } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
+  const navigationState = useRootNavigationState();
+  const [isNavigationReady, setIsNavigationReady] = useState(false);
 
   useEffect(() => {
+    // Wait for navigation to be ready
+    if (navigationState?.key) {
+      setIsNavigationReady(true);
+    }
+  }, [navigationState?.key]);
+
+  useEffect(() => {
+    if (!isNavigationReady) return;
+
     const inAuthGroup = segments[0] === 'login';
 
     if (!isAuthenticated && !inAuthGroup) {
-      // Redirect to login if not authenticated
       router.replace('/login');
     } else if (isAuthenticated && inAuthGroup) {
-      // Redirect to home if authenticated but on login page
       router.replace('/');
     }
-  }, [isAuthenticated, segments]);
+  }, [isAuthenticated, segments, isNavigationReady, router]);
 
   return (
     <>
@@ -35,5 +45,13 @@ export default function RootLayout() {
         }}
       />
     </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ErrorBoundary>
+      <RootLayoutNav />
+    </ErrorBoundary>
   );
 }
