@@ -1,40 +1,29 @@
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect } from 'react';
+import type { User } from '../store/auth';
 import { useAuthStore } from '../store/auth';
+import { GOOGLE_CLIENT_ID, GOOGLE_SCOPES } from '../config/constants';
 
 // Required for web browser auth session
 WebBrowser.maybeCompleteAuthSession();
-
-// Google OAuth configuration
-const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
-
-// Scopes needed for Google Calendar
-const SCOPES = [
-  'openid',
-  'profile',
-  'email',
-  'https://www.googleapis.com/auth/calendar',
-  'https://www.googleapis.com/auth/calendar.events',
-];
 
 export function useGoogleAuth() {
   const { setAuth, setLoading, logout } = useAuthStore();
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: GOOGLE_CLIENT_ID,
-    scopes: SCOPES,
+    scopes: GOOGLE_SCOPES,
   });
 
   useEffect(() => {
     if (response?.type === 'success') {
       const { authentication } = response;
       if (authentication?.accessToken) {
-        // Fetch user info
         fetchUserInfo(authentication.accessToken).then((userInfo) => {
           setAuth({
             accessToken: authentication.accessToken,
-            refreshToken: authentication.refreshToken || null,
+            refreshToken: authentication.refreshToken ?? null,
             expiresAt: authentication.expiresIn
               ? Date.now() + authentication.expiresIn * 1000
               : null,
@@ -46,7 +35,7 @@ export function useGoogleAuth() {
       console.error('Auth error:', response.error);
       setLoading(false);
     }
-  }, [response]);
+  }, [response, setAuth, setLoading]);
 
   const signIn = async () => {
     setLoading(true);
@@ -58,7 +47,7 @@ export function useGoogleAuth() {
     }
   };
 
-  const signOut = async () => {
+  const signOut = () => {
     logout();
   };
 
@@ -69,12 +58,12 @@ export function useGoogleAuth() {
   };
 }
 
-async function fetchUserInfo(accessToken: string) {
+async function fetchUserInfo(accessToken: string): Promise<User | null> {
   try {
     const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    return await response.json();
+    return (await response.json()) as User;
   } catch (error) {
     console.error('Error fetching user info:', error);
     return null;
