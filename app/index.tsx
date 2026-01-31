@@ -1,168 +1,139 @@
-import { useState } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
 import { Stack } from 'expo-router';
-import { useHabitsStore } from '../src/store/habits';
-import { HabitItem } from '../src/components/HabitItem';
+import { useAuthStore } from '../src/store/auth';
+import { useGoogleAuth } from '../src/services/google-auth';
 
 export default function HomeScreen() {
-  const [newHabitName, setNewHabitName] = useState('');
-  const habits = useHabitsStore((s) => s.habits);
-  const addHabit = useHabitsStore((s) => s.addHabit);
-
-  const handleAddHabit = () => {
-    if (newHabitName.trim()) {
-      addHabit(newHabitName.trim());
-      setNewHabitName('');
-    }
-  };
+  const { user } = useAuthStore();
+  const { signOut } = useGoogleAuth();
 
   const today = new Date();
-  const formattedDate = today.toLocaleDateString('es-ES', {
+  const formattedDate = today.toLocaleDateString('en-US', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
   });
 
-  const completedToday = habits.filter((h) =>
-    h.completedDates.includes(today.toISOString().split('T')[0])
-  ).length;
-
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <View style={styles.container}>
       <Stack.Screen
         options={{
-          title: 'Mis Hábitos',
+          title: 'Cairn',
+          headerRight: () => (
+            <Pressable onPress={signOut} style={styles.headerButton}>
+              <Text style={styles.headerButtonText}>Sign Out</Text>
+            </Pressable>
+          ),
         }}
       />
 
-      <View style={styles.header}>
-        <Text style={styles.date}>{formattedDate}</Text>
-        <Text style={styles.progress}>
-          {completedToday} de {habits.length} completados hoy
+      {/* User Info */}
+      <View style={styles.userSection}>
+        {user?.picture && (
+          <Image source={{ uri: user.picture }} style={styles.avatar} />
+        )}
+        <View>
+          <Text style={styles.greeting}>Hello, {user?.name?.split(' ')[0] || 'there'}!</Text>
+          <Text style={styles.date}>{formattedDate}</Text>
+        </View>
+      </View>
+
+      {/* Placeholder for Calendar */}
+      <View style={styles.calendarPlaceholder}>
+        <Text style={styles.placeholderIcon}>📅</Text>
+        <Text style={styles.placeholderTitle}>Calendar Coming Soon</Text>
+        <Text style={styles.placeholderText}>
+          Your positive activities will appear here as colorful markers on your calendar.
         </Text>
       </View>
 
-      <FlatList
-        data={habits}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <HabitItem habit={item} />}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>🌱</Text>
-            <Text style={styles.emptyText}>
-              No tienes hábitos aún.{'\n'}¡Añade uno para empezar!
-            </Text>
-          </View>
-        }
-      />
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Nuevo hábito..."
-          placeholderTextColor="#9CA3AF"
-          value={newHabitName}
-          onChangeText={setNewHabitName}
-          onSubmitEditing={handleAddHabit}
-          returnKeyType="done"
-        />
-        <Pressable
-          style={[styles.addButton, !newHabitName.trim() && styles.addButtonDisabled]}
-          onPress={handleAddHabit}
-          disabled={!newHabitName.trim()}
-        >
-          <Text style={styles.addButtonText}>+</Text>
-        </Pressable>
-      </View>
-    </KeyboardAvoidingView>
+      {/* Floating Add Button */}
+      <Pressable style={styles.fab}>
+        <Text style={styles.fabText}>+</Text>
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F9FAFB',
   },
-  header: {
-    padding: 16,
-    paddingTop: 8,
+  headerButton: {
+    marginRight: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  headerButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  userSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    gap: 12,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#E5E7EB',
+  },
+  greeting: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#111827',
   },
   date: {
     fontSize: 14,
     color: '#6B7280',
-    textTransform: 'capitalize',
+    marginTop: 2,
   },
-  progress: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginTop: 4,
-  },
-  list: {
-    flexGrow: 1,
-    paddingBottom: 16,
-  },
-  emptyContainer: {
+  calendarPlaceholder: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 80,
+    paddingHorizontal: 40,
   },
-  emptyIcon: {
-    fontSize: 48,
+  placeholderIcon: {
+    fontSize: 64,
     marginBottom: 16,
   },
-  emptyText: {
-    fontSize: 16,
+  placeholderTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  placeholderText: {
+    fontSize: 15,
     color: '#6B7280',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 22,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    padding: 16,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 16,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-  },
-  input: {
-    flex: 1,
-    height: 48,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: '#1F2937',
-  },
-  addButton: {
-    width: 48,
-    height: 48,
+  fab: {
+    position: 'absolute',
+    bottom: 32,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#4F46E5',
-    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 12,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  addButtonDisabled: {
-    backgroundColor: '#9CA3AF',
-  },
-  addButtonText: {
+  fabText: {
     color: '#fff',
-    fontSize: 24,
-    fontWeight: '600',
+    fontSize: 28,
+    fontWeight: '500',
+    marginTop: -2,
   },
 });
