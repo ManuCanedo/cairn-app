@@ -6,14 +6,6 @@ _Ninguna tarea en progreso_
 
 ## Pendiente 📋
 
-### Milestone 1: Autenticación con Google
-- [ ] Configurar proyecto en Google Cloud Console
-- [ ] Implementar flujo OAuth con expo-auth-session
-- [ ] Crear pantalla de login
-- [ ] Guardar tokens de acceso de forma segura
-- [ ] Implementar refresh de tokens
-- [ ] Proteger rutas (redirect a login si no autenticado)
-
 ### Milestone 2: Integración Google Calendar
 - [ ] Servicio para Google Calendar API (crear, listar, eliminar eventos)
 - [ ] Crear calendario "Cairn" si no existe
@@ -49,6 +41,13 @@ _Ninguna tarea en progreso_
 - [ ] Compartir progreso
 
 ## Completado ✅
+
+### Milestone 1: Autenticación con Google (2025-01-31)
+- [x] Configurar proyecto en Google Cloud Console
+- [x] Implementar flujo OAuth con expo-auth-session
+- [x] Crear pantalla de login
+- [x] Guardar tokens de acceso de forma segura (Zustand + AsyncStorage)
+- [x] Proteger rutas (redirect a login si no autenticado)
 
 ### v0.1.0 - Setup inicial (2025-01-31)
 - [x] Crear proyecto Expo con TypeScript
