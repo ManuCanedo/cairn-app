@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+/** Authenticated user profile from Google OAuth. */
 export interface User {
   id: string;
   email: string;
@@ -66,8 +67,7 @@ export const useAuthStore = create<AuthState>()(
 
       isTokenExpired: () => {
         const { expiresAt } = get();
-        if (!expiresAt) return true;
-        return Date.now() >= expiresAt;
+        return !expiresAt || Date.now() >= expiresAt;
       },
     }),
     {
