@@ -1,4 +1,4 @@
-# Backlog
+# Cairn - Backlog
 
 ## En Progreso 🔨
 
@@ -16,8 +16,8 @@ _Ninguna tarea en progreso_
 
 ### Milestone 2: Integración Google Calendar
 - [ ] Servicio para Google Calendar API (crear, listar, eliminar eventos)
-- [ ] Crear calendario "Habits" si no existe
-- [ ] Obtener ID del calendario "Habits"
+- [ ] Crear calendario "Cairn" si no existe
+- [ ] Obtener ID del calendario "Cairn"
 - [ ] Listar eventos del mes actual
 - [ ] Crear evento de día completo
 
@@ -56,6 +56,7 @@ _Ninguna tarea en progreso_
 - [x] Configurar Zustand con persistencia
 - [x] Estructura de carpetas base
 - [x] Documentación del proyecto
+- [x] Naming: elegido "Cairn" como nombre de la app
 
 ---
 

@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Habits",
-    "slug": "habits-app",
+    "name": "Cairn",
+    "slug": "cairn",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "habits-app",
+    "scheme": "cairn",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.manu.habits"
+      "bundleIdentifier": "com.manu.cairn"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +23,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.manu.habits"
+      "package": "com.manu.cairn"
     },
     "web": {
       "favicon": "./assets/favicon.png",

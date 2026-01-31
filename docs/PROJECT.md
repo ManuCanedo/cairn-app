@@ -1,4 +1,6 @@
-# Habits App
+# Cairn
+
+> *A cairn is a stack of stones marking a path or summit. Each stone you add marks your journey.*
 
 App móvil minimalista para visualizar y registrar tus actividades positivas usando Google Calendar como backend.
 
@@ -6,10 +8,12 @@ App móvil minimalista para visualizar y registrar tus actividades positivas usa
 
 Una app donde defines tus actividades de bienestar (templates) y las registras día a día. El calendario muestra de un vistazo, con colores, cómo te has cuidado ese mes. Sin gamificación excesiva, sin notificaciones agresivas. Solo lo esencial para crear consistencia y consciencia.
 
+Cada actividad que registras es una piedra más en tu cairn personal.
+
 ## Concepto Core
 
 1. **Login con Google** → Acceso a tu calendario
-2. **Calendario "Habits"** → Se crea automáticamente en tu Google Calendar
+2. **Calendario "Cairn"** → Se crea automáticamente en tu Google Calendar
 3. **Templates de actividades** → Defines una vez tus actividades positivas (Meditar, Ejercicio, Leer...)
 4. **Registro rápido** → Botón + para añadir una actividad al día actual (evento de día completo)
 5. **Vista de calendario** → Ves el mes con colores según las actividades realizadas
@@ -30,7 +34,7 @@ Una app donde defines tus actividades de bienestar (templates) y las registras d
 ## Arquitectura
 
 ```
-habits-app/
+cairn/
 ├── app/                        # Rutas (expo-router)
 │   ├── _layout.tsx             # Layout raíz + auth check
 │   ├── index.tsx               # Pantalla principal (calendario)
@@ -64,7 +68,7 @@ habits-app/
 │  ┌─────────┐    ┌─────────────┐    ┌──────────────────────┐ │
 │  │  Login  │ → │  Crear      │ → │  Definir actividades │ │
 │  │  Google │    │  calendario │    │  positivas (templates)│ │
-│  └─────────┘    │  "Habits"   │    └──────────────────────┘ │
+│  └─────────┘    │  "Cairn"    │    └──────────────────────┘ │
 │                 └─────────────┘                              │
 ├─────────────────────────────────────────────────────────────┤
 │  2. USO DIARIO                                               │
@@ -79,6 +83,10 @@ habits-app/
 ```
 
 ## Decisiones Técnicas
+
+### 2025-01-31: Nombre "Cairn"
+- **Decisión**: Nombrar la app "Cairn" (montículo de piedras que marca caminos)
+- **Razón**: Metáfora visual perfecta - cada hábito/actividad es una piedra que marca tu progreso. Minimalista, único, memorable.
 
 ### 2025-01-31: Stack inicial
 - **Decisión**: React Native + Expo sobre Flutter o Ionic
@@ -100,7 +108,7 @@ habits-app/
 
 ### 1. Google Cloud Console (necesario)
 ```
-1. Crear proyecto en console.cloud.google.com
+1. Crear proyecto en console.cloud.google.com (nombre: "Cairn")
 2. Habilitar Google Calendar API
 3. Crear credenciales OAuth 2.0 (tipo: aplicación web/iOS/Android)
 4. Configurar pantalla de consentimiento OAuth
