@@ -1,37 +1,76 @@
 # Cairn - Development Tasks
 
-Este archivo contiene tareas de desarrollo para ser ejecutadas por Claude Code.
+This file contains development tasks to be executed by Claude Code agents.
 
-**Instrucciones para Claude Code:**
-1. Lee la tarea marcada como `[ACTIVE]`
-2. Ejecuta los pasos descritos
-3. Verifica los criterios de aceptación
-4. Marca la tarea como `[DONE]` y añade notas si es necesario
-5. Si hay bloqueadores, márcala como `[BLOCKED]` con explicación
+**Instructions for Claude Code:**
+1. Read the task marked as `[ACTIVE]`
+2. Execute the steps described using TDD (Red/Green/Refactor)
+3. **REQUIRED: Run code-simplifier agent review before testing**
+4. Run all checks: `npm run typecheck && npm test`
+5. Verify the acceptance criteria
+6. Mark the task as `[DONE]` and add notes if necessary
+7. If there are blockers, mark it as `[BLOCKED]` with explanation
+
+See `docs/AGENT_WORKFLOW.md` for the complete workflow.
+
+---
+
+## Task Template
+
+Use this template for all new tasks. See `docs/AGENT_WORKFLOW.md` for the complete execution workflow.
+
+```markdown
+## Task XXX: [Title] [STATUS]
+
+### Context
+[Why this task exists. What problem it solves.]
+
+### Prerequisites
+- Task NNN completed (specifically need: `functionName` from `file.ts`)
+
+### Objective
+[1-2 sentences max]
+
+### Files to Create/Modify
+| File | Action | Notes |
+|------|--------|-------|
+| `src/path/file.ts` | Create | Description |
+| `src/__tests__/path/file.test.ts` | Create | Test coverage |
+
+### Acceptance Criteria
+- [ ] [Specific, testable criterion 1]
+- [ ] [Specific, testable criterion 2]
+- [ ] code-simplifier review: DONE
+- [ ] TypeScript compiles: `npm run typecheck`
+- [ ] Tests pass: `npm test`
+
+### Rollback Plan
+If task fails: `git reset --hard pre-task-XXX`
+```
 
 ---
 
 ## Task 001: Fix Web Build Error [DONE]
 
-### Contexto
-La app no carga en web. Muestra pantalla blanca con error en consola:
+### Context
+The app doesn't load on web. Shows a white screen with error in console:
 ```
 SyntaxError: Cannot use 'import.meta' outside a module
 ```
 
-El error viene de `expo-router/entry.bundle` y parece ser un problema de configuración de Metro/Expo para web.
+The error comes from `expo-router/entry.bundle` and appears to be a Metro/Expo web configuration issue.
 
-### Objetivo
+### Objective
 Hacer que la app cargue correctamente en `http://localhost:8081` mostrando la pantalla de login.
 
-### Archivos relevantes
+### Relevant Files
 - `package.json` - dependencias
 - `metro.config.js` - configuración de Metro (recién creado)
 - `app.json` - configuración de Expo
 - `app/login.tsx` - pantalla de login
 - `app/_layout.tsx` - layout principal
 
-### Pasos sugeridos
+### Suggested Steps
 1. Verificar compatibilidad de versiones (React 19.1 + react-native-web + expo-router)
 2. Limpiar completamente: `rm -rf node_modules && rm package-lock.json`
 3. Reinstalar: `npm install --legacy-peer-deps`
@@ -39,19 +78,19 @@ Hacer que la app cargue correctamente en `http://localhost:8081` mostrando la pa
 5. Si persiste, investigar configuración específica de Metro para web
 6. Probar en Chrome y verificar que no hay errores en consola
 
-### Criterios de aceptación
+### Acceptance Criteria
 - [x] `npm run web` inicia sin errores
 - [x] La app carga en `http://localhost:8081`
 - [x] Se muestra la pantalla de login con el botón "Continue with Google"
 - [x] No hay errores de JavaScript en la consola del navegador
 
-### Notas
+### Notes
 - Puede requerir downgrade de alguna dependencia
 - Verificar que `main` en package.json sea `expo-router/entry`
 - El proyecto usa Expo SDK 54
 
-### Solución aplicada (2025-01-31)
-El error "import.meta outside a module" es un problema conocido de Expo SDK 54 con Metro bundler cuando usa ES modules. Ver: https://github.com/expo/expo/issues/36384
+### Solution Applied (2025-01-31)
+The "import.meta outside a module" error is a known issue with Expo SDK 54 and Metro bundler when using ES modules. See: https://github.com/expo/expo/issues/36384
 
 **Cambios realizados:**
 
@@ -80,19 +119,19 @@ El error "import.meta outside a module" es un problema conocido de Expo SDK 54 c
 4. **app/_layout.tsx** - Corregir navegación prematura usando `useRootNavigationState()`:
    - Añadir verificación de que la navegación está lista antes de llamar a `router.replace()`
 
-**Resultado:** La app bundlea correctamente y carga la pantalla de login en Chrome sin errores en consola.
+**Result:** The app bundles correctly and loads the login screen in Chrome without console errors.
 
 ---
 
 ## Task 002: Test Google OAuth Flow [DONE]
 
-### Contexto
+### Context
 Una vez que la app cargue en web, necesitamos verificar que el flujo de OAuth con Google funciona correctamente.
 
-### Objetivo
+### Objective
 Completar un login exitoso con Google y ver la pantalla principal con los datos del usuario.
 
-### Prerequisitos
+### Prerequisites
 - Task 001 completada
 
 ### Configuración OAuth corregida
@@ -102,48 +141,48 @@ Completar un login exitoso con Google y ver la pantalla principal con los datos 
   - `https://auth.expo.io/@manuel.canedo/cairn`
   - `http://localhost:8081`
 
-### Criterios de aceptación
+### Acceptance Criteria
 - [x] El botón de Google abre la ventana de OAuth
 - [x] Se puede autorizar con la cuenta de prueba
 - [x] Después del login, se muestra la pantalla principal
 - [x] El nombre del usuario aparece en la UI
 - [x] El token se persiste (refrescar página mantiene sesión)
 
-### Problemas encontrados y solucionados (2025-01-31)
+### Issues Found and Resolved (2025-01-31)
 
 **1. Error "invalid_client" (Error 401)**
-- **Causa**: Typo en el Client ID - había un "3" extra
-- **Antes**: `2006113013377-...` (13 dígitos)
-- **Después**: `200611301377-...` (12 dígitos)
-- **Fix**: Corregido en `src/config/constants.ts`
+- **Cause**: Typo in Client ID - there was an extra "3"
+- **Before**: `2006113013377-...` (13 digits)
+- **After**: `200611301377-...` (12 digits)
+- **Fix**: Corrected in `src/config/constants.ts`
 
 **2. Error "redirect_uri_mismatch" (Error 400)**
-- **Causa**: Solo estaba configurado el redirect de Expo proxy
-- **Fix**: Añadir `http://localhost:8081` en Google Cloud Console > OAuth Client > URIs de redireccionamiento autorizados
+- **Cause**: Only the Expo proxy redirect was configured
+- **Fix**: Add `http://localhost:8081` in Google Cloud Console > OAuth Client > Authorized redirect URIs
 
 **3. Error "Access blocked: app has not completed verification"**
-- **Causa**: El usuario de prueba no estaba añadido en la pantalla de consentimiento OAuth
-- **Fix**: Google Cloud Console > Google Auth Platform > Público > Usuarios de prueba > Agregar `manuel.ctabares@gmail.com`
+- **Cause**: The test user was not added to the OAuth consent screen
+- **Fix**: Google Cloud Console > Google Auth Platform > Test users > Add `manuel.ctabares@gmail.com`
 
-### Resultado
-✅ Login con Google funciona correctamente. La app muestra "Hello, Manuel!" con la foto de perfil del usuario.
+### Result
+✅ Google login works correctly. The app shows "Hello, Manuel!" with the user's profile photo.
 
 ---
 
 ## Task 003: Implement Google Calendar Service [DONE]
 
-### Contexto
-Necesitamos un servicio que interactúe con la Google Calendar API para:
-- Crear un calendario dedicado "Cairn" si no existe
-- Listar eventos del calendario
-- Crear eventos de día completo (all-day events)
+### Context
+We need a service that interacts with the Google Calendar API to:
+- Create a dedicated "Cairn" calendar if it doesn't exist
+- List calendar events
+- Create all-day events
 
-### Objetivo
-Crear `src/services/google-calendar.ts` con funciones para CRUD de calendarios y eventos.
+### Objective
+Create `src/services/google-calendar.ts` with CRUD functions for calendars and events.
 
-### Prerequisitos
+### Prerequisites
 - Task 002 completada (OAuth funcionando)
-- El usuario debe tener un access token válido en el auth store
+- The user must have a valid access token in the auth store
 
 ### API Reference
 Base URL: `https://www.googleapis.com/calendar/v3`
@@ -172,7 +211,7 @@ DELETE /calendars/{calendarId}/events/{eventId}  # Eliminar evento
 1: Lavanda, 2: Salvia, 3: Uva, 4: Flamingo, 5: Banana,
 6: Mandarina, 7: Pavo real, 8: Grafito, 9: Arándano, 10: Albahaca, 11: Tomate
 
-### Implementación requerida
+### Implementation requerida
 
 ```typescript
 // src/services/google-calendar.ts
@@ -205,11 +244,11 @@ async function deleteEvent(
 ): Promise<void>
 ```
 
-### Archivos a crear/modificar
+### Files to Create/Modify
 - Crear: `src/services/google-calendar.ts`
 - Crear: `src/types/calendar.ts` (tipos TypeScript)
 
-### Criterios de aceptación
+### Acceptance Criteria
 - [x] El servicio se exporta correctamente
 - [x] `getOrCreateCairnCalendar` crea el calendario si no existe
 - [x] `getOrCreateCairnCalendar` retorna el ID si ya existe
@@ -218,8 +257,8 @@ async function deleteEvent(
 - [x] Los errores de API se manejan con try/catch
 - [x] TypeScript compila sin errores
 
-### Testing manual
-Después de implementar, probar en la consola del navegador:
+### Manual Testing
+After implementing, test in the browser console:
 ```javascript
 // Con la app abierta y logueado
 import { getOrCreateCairnCalendar } from './src/services/google-calendar';
@@ -227,11 +266,11 @@ const calId = await getOrCreateCairnCalendar(accessToken);
 console.log('Calendar ID:', calId);
 ```
 
-### Implementación (2025-01-31)
+### Implementation (2025-01-31)
 
-**Archivos creados:**
+**Files created:**
 
-1. **src/types/calendar.ts** - Tipos TypeScript:
+1. **src/types/calendar.ts** - TypeScript types:
    - `CalendarListEntry` - Entrada de lista de calendarios
    - `CalendarEvent` - Evento con soporte para all-day (date) y timed (dateTime)
    - `CalendarListResponse` / `EventListResponse` - Respuestas paginadas de la API
@@ -243,29 +282,29 @@ console.log('Calendar ID:', calId);
    - `createAllDayEvent(accessToken, calendarId, summary, date, colorId)` - Crea evento all-day con descripción "Logged via Cairn"
    - `deleteEvent(accessToken, calendarId, eventId)` - Elimina evento (maneja 204 No Content)
 
-**Características:**
-- Helper `apiRequest<T>` centralizado para todas las llamadas
-- Clase `GoogleCalendarError` con statusCode y details para debugging
-- URL encoding correcto para calendarId y eventId
-- Manejo de respuesta 204 No Content para DELETE
+**Features:**
+- Centralized `apiRequest<T>` helper for all calls
+- `GoogleCalendarError` class with statusCode and details for debugging
+- Correct URL encoding for calendarId and eventId
+- Handling of 204 No Content response for DELETE
 
 ---
 
 ## Task 004: Create Calendar UI Component [DONE]
 
-### Contexto
-La pantalla principal debe mostrar un calendario mensual donde cada día muestre indicadores de color según las actividades realizadas.
+### Context
+The main screen should show a monthly calendar where each day displays color indicators based on completed activities.
 
-### Objetivo
-Crear un componente de calendario mensual que:
-- Muestre el mes actual con navegación prev/next
-- Destaque el día actual
-- Muestre puntos de colores en los días con actividades
+### Objective
+Create a monthly calendar component that:
+- Shows the current month with prev/next navigation
+- Highlights the current day
+- Shows color dots on days with activities
 
-### Prerequisitos
+### Prerequisites
 - Task 003 completada (Google Calendar service)
 
-### Diseño visual
+### Visual Design
 ```
 ┌─────────────────────────────────────┐
 │  ←    January 2025    →             │
@@ -280,14 +319,14 @@ Crear un componente de calendario mensual que:
 │             ●    ●                  │
 │  21   22   23   24   25   26   27   │
 │        ●                  ●●●       │
-│  28   29   30  [31]                 │  ← [31] = hoy destacado
+│  28   29   30  [31]                 │  ← [31] = today highlighted
 │                  ●                  │
 └─────────────────────────────────────┘
 ```
 
-Los puntos de colores (●) representan actividades de ese día.
+Color dots (●) represent activities for that day.
 
-### Archivos a crear
+### Files to Create
 - `src/components/Calendar/MonthView.tsx` - Componente principal
 - `src/components/Calendar/DayCell.tsx` - Celda individual del día
 - `src/components/Calendar/CalendarHeader.tsx` - Header con navegación
@@ -302,14 +341,14 @@ interface MonthViewProps {
 }
 ```
 
-### Implementación
+### Implementation
 1. Usar `date-fns` para manipulación de fechas (instalar si no está)
 2. Grid de 7 columnas (días de la semana)
 3. Calcular días del mes actual + padding de meses anterior/siguiente
 4. Mapear eventos a días por fecha
 5. Mostrar hasta 3 puntos de color por día (si hay más, mostrar "+")
 
-### Criterios de aceptación
+### Acceptance Criteria
 - [x] El calendario muestra el mes actual correctamente
 - [x] Las flechas ← → cambian de mes
 - [x] El día actual está visualmente destacado
@@ -317,46 +356,46 @@ interface MonthViewProps {
 - [x] El componente es responsive
 - [x] No hay warnings en consola
 
-### Implementación (2025-01-31)
+### Implementation (2025-01-31)
 
-**Dependencias instaladas:**
-- `date-fns` para manipulación de fechas
+**Dependencies installed:**
+- `date-fns` for date manipulation
 
-**Archivos creados:**
+**Files created:**
 1. `src/components/Calendar/colors.ts` - Mapeo de colorId de Google Calendar a hex
 2. `src/components/Calendar/CalendarHeader.tsx` - Header con navegación prev/next mes
 3. `src/components/Calendar/DayCell.tsx` - Celda individual con día + puntos de colores
 4. `src/components/Calendar/MonthView.tsx` - Componente principal con grid 7 columnas
 5. `src/components/Calendar/index.ts` - Barrel export
 
-**Archivos modificados:**
-- `app/index.tsx` - Integrado calendario real con carga de eventos desde Google Calendar
+**Files modified:**
+- `app/index.tsx` - Integrated real calendar with event loading from Google Calendar
 
-**Características:**
-- Grid flexbox de 7 columnas (Mon-Sun)
-- Día actual destacado con círculo púrpura
-- Días de otros meses en gris claro
-- Puntos de colores (máx 3, luego "+") para eventos
-- Navegación entre meses con flechas
-- Carga automática de eventos al cambiar mes
-- Estado de loading y error handling con retry
+**Features:**
+- 7-column flexbox grid (Mon-Sun)
+- Current day highlighted with purple circle
+- Other months' days in light gray
+- Color dots (max 3, then "+") for events
+- Month navigation with arrows
+- Automatic event loading when changing months
+- Loading state and error handling with retry
 
 ---
 
 ## Task 005: Activity Templates CRUD [PENDING]
 
-### Contexto
-Los usuarios definen "actividades positivas" (templates) una vez, y luego las seleccionan rápidamente para registrar que las hicieron.
+### Context
+Users define "positive activities" (templates) once, then quickly select them to log that they completed them.
 
-Ejemplos: "Meditar 🧘", "Ejercicio 💪", "Leer 📚", "Dormir 8h 😴"
+Examples: "Meditate 🧘", "Exercise 💪", "Read 📚", "Sleep 8h 😴"
 
-### Objetivo
-Crear la UI y lógica para gestionar templates de actividades.
+### Objective
+Create UI and logic to manage activity templates.
 
-### Prerequisitos
+### Prerequisites
 - Task 001 completada (app carga)
 
-### Modelo de datos
+### Data Model
 ```typescript
 // src/types/activity.ts
 interface ActivityTemplate {
@@ -379,19 +418,19 @@ interface ActivitiesState {
 }
 ```
 
-### Pantallas a crear
-1. **Lista de actividades** (`app/activities/index.tsx`)
-   - Lista de templates existentes
-   - Botón para añadir nueva
-   - Swipe o botón para eliminar
+### Screens to Create
+1. **Activity list** (`app/activities/index.tsx`)
+   - List of existing templates
+   - Button to add new
+   - Swipe or button to delete
 
-2. **Crear/Editar actividad** (`app/activities/edit.tsx`)
-   - Input para nombre
-   - Selector de emoji (grid de emojis comunes)
-   - Selector de color (11 colores de Google Calendar)
-   - Botón guardar
+2. **Create/Edit activity** (`app/activities/edit.tsx`)
+   - Name input
+   - Emoji selector (grid of common emojis)
+   - Color selector (11 Google Calendar colors)
+   - Save button
 
-### Colores disponibles (mostrar como círculos)
+### Available Colors (display as circles)
 ```typescript
 const GOOGLE_COLORS = [
   { id: '1', name: 'Lavanda', hex: '#7986cb' },
@@ -408,61 +447,61 @@ const GOOGLE_COLORS = [
 ];
 ```
 
-### Emojis sugeridos (grid)
+### Suggested Emojis (grid)
 ```
 🧘 💪 📚 😴 🏃 🚴 🧠 💧
 🥗 🍎 ✍️ 🎨 🎵 🌅 🌙 ⭐
 ```
 
-### Criterios de aceptación
-- [ ] Se pueden crear nuevos templates
-- [ ] Se pueden editar templates existentes
-- [ ] Se pueden eliminar templates
-- [ ] Los templates persisten (AsyncStorage via Zustand)
-- [ ] El selector de emoji funciona
-- [ ] El selector de color muestra los 11 colores
-- [ ] La UI es intuitiva y minimalista
+### Acceptance Criteria
+- [ ] New templates can be created
+- [ ] Existing templates can be edited
+- [ ] Templates can be deleted
+- [ ] Templates persist (AsyncStorage via Zustand)
+- [ ] Emoji selector works
+- [ ] Color selector shows all 11 colors
+- [ ] UI is intuitive and minimalist
 
 ---
 
 ## Task 006: Activity Registration Flow [PENDING]
 
-### Contexto
-El flujo principal de la app: el usuario pulsa el botón + y selecciona una actividad para registrarla en el día actual.
+### Context
+The main app flow: user presses the + button and selects an activity to log it for the current day.
 
-### Objetivo
-Implementar el flujo completo de registro de actividad.
+### Objective
+Implement the complete activity registration flow.
 
-### Prerequisitos
+### Prerequisites
 - Task 003 completada (Google Calendar service)
 - Task 004 completada (Calendar UI)
 - Task 005 completada (Activity templates)
 
-### Flujo de usuario
+### User Flow
 ```
-1. Usuario en pantalla principal (calendario)
-2. Pulsa botón + (FAB)
-3. Se abre modal/bottom sheet con lista de sus actividades
-4. Selecciona una actividad
-5. Se crea evento en Google Calendar (día actual)
-6. Modal se cierra
-7. Calendario se actualiza mostrando el nuevo punto de color
-8. Feedback visual de éxito (toast o similar)
+1. User on main screen (calendar)
+2. Presses + button (FAB)
+3. Modal/bottom sheet opens with their activity list
+4. Selects an activity
+5. Event is created in Google Calendar (current day)
+6. Modal closes
+7. Calendar updates showing the new color dot
+8. Visual success feedback (toast or similar)
 ```
 
-### Componentes a crear/modificar
+### Components to Create/Modify
 1. **ActivityPicker** (`src/components/ActivityPicker.tsx`)
-   - Modal o bottom sheet
-   - Grid de actividades del usuario
-   - Cada actividad muestra emoji + nombre + color
+   - Modal or bottom sheet
+   - Grid of user's activities
+   - Each activity shows emoji + name + color
 
-2. **Modificar HomeScreen** (`app/index.tsx`)
-   - Integrar calendario real (no placeholder)
-   - FAB abre ActivityPicker
-   - Cargar eventos del mes actual
-   - Refrescar al crear evento
+2. **Modify HomeScreen** (`app/index.tsx`)
+   - Integrate real calendar (not placeholder)
+   - FAB opens ActivityPicker
+   - Load current month's events
+   - Refresh after creating event
 
-### Integración
+### Integration
 ```typescript
 // En HomeScreen
 const handleActivitySelect = async (template: ActivityTemplate) => {
@@ -480,83 +519,83 @@ const handleActivitySelect = async (template: ActivityTemplate) => {
 };
 ```
 
-### Criterios de aceptación
-- [ ] El FAB abre el selector de actividades
-- [ ] Las actividades del usuario se muestran correctamente
-- [ ] Al seleccionar, se crea el evento en Google Calendar
-- [ ] El calendario se actualiza inmediatamente
-- [ ] Hay feedback visual de éxito
-- [ ] Si hay error, se muestra mensaje apropiado
-- [ ] El modal se puede cerrar sin seleccionar
+### Acceptance Criteria
+- [ ] FAB opens the activity selector
+- [ ] User's activities are displayed correctly
+- [ ] On selection, event is created in Google Calendar
+- [ ] Calendar updates immediately
+- [ ] Visual success feedback is shown
+- [ ] Error message is shown if there's an error
+- [ ] Modal can be closed without selecting
 
 ---
 
 ## Task 007: Integration & Polish [PENDING]
 
-### Contexto
-Una vez completadas las tareas anteriores, necesitamos integrar todo y pulir la experiencia.
+### Context
+Once the previous tasks are completed, we need to integrate everything and polish the experience.
 
-### Objetivo
-App funcional end-to-end con UX pulida.
+### Objective
+Functional end-to-end app with polished UX.
 
-### Subtareas
-1. Navegación: Añadir acceso a pantalla de actividades desde home
-2. Empty states: Mensajes cuando no hay actividades/eventos
-3. Loading states: Spinners mientras cargan datos
-4. Error handling: Mensajes de error amigables
-5. Onboarding: Guiar al usuario a crear su primera actividad
-6. Persistencia del calendarId: No buscar/crear en cada sesión
+### Subtasks
+1. Navigation: Add access to activities screen from home
+2. Empty states: Messages when there are no activities/events
+3. Loading states: Spinners while data loads
+4. Error handling: User-friendly error messages
+5. Onboarding: Guide user to create their first activity
+6. CalendarId persistence: Don't search/create on each session
 
-### Criterios de aceptación
-- [ ] Flujo completo funciona sin errores
-- [ ] Estados de carga son claros
-- [ ] Errores se muestran de forma amigable
-- [ ] Primera experiencia de usuario es guiada
-- [ ] No hay console.logs en producción
-- [ ] Commit final con todos los cambios
+### Acceptance Criteria
+- [ ] Complete flow works without errors
+- [ ] Loading states are clear
+- [ ] Errors are shown in a friendly way
+- [ ] First-time user experience is guided
+- [ ] No console.logs in production
+- [ ] Final commit with all changes
 
 ---
 
 ## Completed Tasks
 
 ### Task 001: Fix Web Build Error ✅
-- **Fecha:** 2025-01-31
-- **Problema:** Error "import.meta outside a module" en Metro bundler
-- **Solución:**
-  - Desactivar package exports en metro.config.js
-  - Crear babel.config.js con transformación de import.meta
-  - Desactivar nueva arquitectura en app.json
-  - Fix de navegación prematura en _layout.tsx
+- **Date:** 2025-01-31
+- **Problem:** "import.meta outside a module" error in Metro bundler
+- **Solution:**
+  - Disable package exports in metro.config.js
+  - Create babel.config.js with import.meta transformation
+  - Disable new architecture in app.json
+  - Fix premature navigation in _layout.tsx
 
 ### Task 002: Test Google OAuth Flow ✅
-- **Fecha:** 2025-01-31
-- **Problemas encontrados:**
+- **Date:** 2025-01-31
+- **Issues found:**
   1. Typo en Client ID (dígito extra)
   2. Redirect URI faltante para localhost
   3. Usuario de prueba no añadido en OAuth consent screen
-- **Resultado:** Login exitoso con Google, usuario autenticado correctamente
+- **Result:** Successful Google login, user authenticated correctly
 
 ### Task 003: Implement Google Calendar Service ✅
-- **Fecha:** 2025-01-31
-- **Archivos creados:**
-  - `src/types/calendar.ts` - Tipos TypeScript para Calendar API
-  - `src/services/google-calendar.ts` - Servicio con 4 funciones CRUD
-- **Funciones implementadas:**
-  - `getOrCreateCairnCalendar()` - Busca o crea calendario "Cairn"
-  - `listEvents()` - Lista eventos de un rango de fechas
-  - `createAllDayEvent()` - Crea evento all-day con colorId
-  - `deleteEvent()` - Elimina evento
-- **Resultado:** TypeScript compila sin errores, servicio listo para usar
+- **Date:** 2025-01-31
+- **Files created:**
+  - `src/types/calendar.ts` - TypeScript types for Calendar API
+  - `src/services/google-calendar.ts` - Service with 4 CRUD functions
+- **Functions implemented:**
+  - `getOrCreateCairnCalendar()` - Finds or creates "Cairn" calendar
+  - `listEvents()` - Lists events in a date range
+  - `createAllDayEvent()` - Creates all-day event with colorId
+  - `deleteEvent()` - Deletes event
+- **Result:** TypeScript compiles without errors, service ready to use
 
 ### Task 004: Create Calendar UI Component ✅
-- **Fecha:** 2025-01-31
-- **Dependencias:** date-fns instalado
-- **Archivos creados:**
-  - `src/components/Calendar/colors.ts` - Mapeo colorId Google → hex
-  - `src/components/Calendar/CalendarHeader.tsx` - Header con navegación
-  - `src/components/Calendar/DayCell.tsx` - Celda individual + puntos de colores
-  - `src/components/Calendar/MonthView.tsx` - Calendario mensual completo
+- **Date:** 2025-01-31
+- **Dependencies:** date-fns installed
+- **Files created:**
+  - `src/components/Calendar/colors.ts` - Google colorId → hex mapping
+  - `src/components/Calendar/CalendarHeader.tsx` - Header with navigation
+  - `src/components/Calendar/DayCell.tsx` - Individual cell + color dots
+  - `src/components/Calendar/MonthView.tsx` - Complete monthly calendar
   - `src/components/Calendar/index.ts` - Barrel export
-- **Integración:**
-  - `app/index.tsx` actualizado con calendario real + fetch de eventos
-- **Resultado:** Calendario funcional con navegación, día actual destacado, eventos como puntos de colores
+- **Integration:**
+  - `app/index.tsx` updated with real calendar + event fetch
+- **Result:** Functional calendar with navigation, current day highlighted, events as color dots

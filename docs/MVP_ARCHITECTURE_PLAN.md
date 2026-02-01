@@ -8,6 +8,19 @@
 
 ---
 
+> **⚠️ DOCUMENT STATUS**: Point-in-time architecture review from 2026-01-31.
+> Many P0 issues have been resolved. Re-review needed before using as implementation guide.
+>
+> | Issue                      | Status                        |
+> | -------------------------- | ----------------------------- |
+> | P0.2 Hardcoded credentials | Partially fixed               |
+> | P0.3 No ErrorBoundary      | **RESOLVED**                  |
+> | P0.4 401 error handling    | **RESOLVED**                  |
+> | P0.1 Token refresh         | Still valid - not implemented |
+> | P2.7 Dead code files       | **RESOLVED** - files removed  |
+
+---
+
 ## Executive Summary
 
 The Cairn codebase demonstrates solid foundational patterns for an early-stage React Native/Expo application. The Google Calendar-as-backend approach is innovative and reduces infrastructure complexity. However, several critical gaps must be addressed before MVP launch: **token refresh handling, environment configuration, error boundaries, and offline resilience**. The codebase is well-structured but needs hardening for production traffic and edge cases.

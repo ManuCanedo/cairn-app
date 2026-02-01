@@ -132,4 +132,4 @@ npm run android  # Android (Expo Go o emulador)
 
 ## Próximos pasos
 
-Ver `BACKLOG.md` para features pendientes.
+See [GitHub Issues](https://github.com/ManuCanedo/cairn-app/issues) for pending tasks and features.

@@ -15,7 +15,7 @@
 | Type | Minimum Coverage |
 |------|------------------|
 | Unit Tests | 100% |
-| Integration Tests | 80% |
+| Integration Tests | 0% (not yet implemented) |
 | E2E Tests (future) | Critical paths |
 
 ### TDD Workflow
@@ -280,23 +280,76 @@ coverageThreshold: {
 
 ---
 
+## Test Requirements for AI Agents
+
+When writing tests, AI agents MUST follow these rules:
+
+### 1. No Coverage-Only Tests
+
+**Bad:**
+```typescript
+it('exports MonthView', () => {
+  expect(MonthView).toBeDefined();
+});
+```
+
+**Good:**
+```typescript
+it('renders current month by default', () => {
+  render(<MonthView events={[]} onMonthChange={jest.fn()} />);
+  expect(screen.getByText(format(new Date(), 'MMMM yyyy'))).toBeInTheDocument();
+});
+```
+
+### 2. Mock at Boundaries Only
+
+Mock external services (fetch, AsyncStorage, expo modules), NOT internal components.
+
+### 3. Test User Behavior
+
+Use accessible queries that reflect how users interact.
+
+**Bad:** `screen.getByTestId('submit-button');`
+
+**Good:** `screen.getByRole('button', { name: /sign in/i });`
+
+### 4. Include Failure Cases
+
+Every function with error handling needs error path tests.
+
+### 5. Verify State Changes
+
+After actions, assert both state AND rendered output.
+
+### 6. Test File Naming
+
+- Unit tests: `src/__tests__/[path]/[filename].test.ts`
+- Integration tests: `src/__tests__/integration/[feature].test.ts`
+- E2E tests: `e2e/[flow].spec.ts`
+
+---
+
 ## Pre-commit Checklist
 
 Before committing any code:
 
-- [ ] All tests pass: `npm test`
-- [ ] Coverage is 100%: `npm run test:coverage`
-- [ ] TypeScript compiles: `npx tsc --noEmit`
-- [ ] No console.logs in production code
-- [ ] New features have corresponding tests
+1. [ ] **code-simplifier agent review completed** (see `docs/AGENT_WORKFLOW.md`)
+2. [ ] All tests pass: `npm test`
+3. [ ] Coverage is 100%: `npm run test:coverage`
+4. [ ] TypeScript compiles: `npm run typecheck`
+5. [ ] No console.logs in production code
+6. [ ] New features have corresponding tests
 
 ---
 
 ## CI/CD Integration
 
+> **NOTE**: CI/CD pipeline is implemented via GitHub Actions.
+> See `.github/workflows/ci.yml` for configuration.
+
 Tests run automatically on:
-- Every push
-- Every pull request
+- Every push to main/master
+- Every pull request to main/master
 
 Pipeline fails if:
 - Any test fails
@@ -305,4 +358,4 @@ Pipeline fails if:
 
 ---
 
-*Last updated: 2026-01-31*
+*Last updated: 2025-01-31*
