@@ -40,7 +40,7 @@ export default {
       favicon: './assets/favicon.png',
       bundler: 'metro',
     },
-    plugins: ['expo-router'],
+    plugins: ['expo-router', 'expo-secure-store'],
     extra: {
       // OAuth credentials - use EXPO_PUBLIC_ prefix for Expo to load them
       // See .env.example for required environment variables
