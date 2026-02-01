@@ -431,7 +431,7 @@ interface MonthViewProps {
 
 ---
 
-## Task 005: Activity Templates CRUD [PENDING]
+## Task 005: Activity Templates CRUD [DONE]
 
 ### Context
 
@@ -522,7 +522,7 @@ const GOOGLE_COLORS = [
 
 ---
 
-## Task 006: Activity Registration Flow [PENDING]
+## Task 006: Activity Registration Flow [DONE]
 
 ### Context
 
@@ -594,7 +594,7 @@ const handleActivitySelect = async (template: ActivityTemplate) => {
 
 ---
 
-## Task 007: Integration & Polish [PENDING]
+## Task 007: Integration & Polish [DONE]
 
 ### Context
 
@@ -671,3 +671,35 @@ Functional end-to-end app with polished UX.
 - **Integration:**
   - `app/index.tsx` updated with real calendar + event fetch
 - **Result:** Functional calendar with navigation, current day highlighted, events as color dots
+
+### Task 005: Activity Templates CRUD ✅
+
+- **Date:** 2026-02-01
+- **Files created:**
+  - `src/types/activity.ts` - ActivityTemplate type definitions
+  - `src/store/activities.ts` - Zustand store with AsyncStorage persistence
+  - `src/components/ui/ColorSelector.tsx` - 11 Google Calendar colors
+  - `src/components/ui/EmojiSelector.tsx` - 16 suggested emojis
+  - `app/activities/index.tsx` - Activity list screen
+  - `app/activities/edit.tsx` - Create/edit screen
+- **Integration:**
+  - `app/index.tsx` updated with Activities button in header
+- **Result:** Full CRUD for activity templates with persistence
+
+### Task 006: Activity Registration Flow ✅
+
+- **Date:** 2026-02-01
+- **Files created:**
+  - `src/components/ActivityPicker.tsx` - Modal for selecting activities
+- **Integration:**
+  - `app/index.tsx` updated with FAB integration, event creation, toast notifications
+- **Result:** Users can log activities via FAB, events created in Google Calendar
+
+### Task 007: Integration & Polish ✅
+
+- **Date:** 2026-02-01
+- **Files created:**
+  - `src/store/calendar.ts` - CalendarId persistence store
+- **Integration:**
+  - `app/index.tsx` updated to use persisted calendarId
+- **Result:** CalendarId persists across sessions, cleared on sign out
