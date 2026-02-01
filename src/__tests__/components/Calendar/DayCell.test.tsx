@@ -60,33 +60,36 @@ describe('DayCell', () => {
     });
 
     it('shows plus sign for many events', () => {
-      render(
-        <DayCell {...defaultProps} eventColors={['1', '2', '3', '4', '5', '6']} />
-      );
+      render(<DayCell {...defaultProps} eventColors={['1', '2', '3', '4', '5', '6']} />);
 
       expect(screen.getByText('+')).toBeInTheDocument();
     });
   });
 
-  describe('styling', () => {
-    it('renders with isCurrentMonth false', () => {
-      render(<DayCell {...defaultProps} isCurrentMonth={false} />);
+  describe('prop edge cases', () => {
+    it.each([
+      { isCurrentMonth: false, isToday: false },
+      { isCurrentMonth: true, isToday: true },
+      { isCurrentMonth: false, isToday: true },
+    ])(
+      'renders with isCurrentMonth=$isCurrentMonth, isToday=$isToday',
+      ({ isCurrentMonth, isToday }) => {
+        render(<DayCell {...defaultProps} isCurrentMonth={isCurrentMonth} isToday={isToday} />);
 
-      expect(screen.getByText('15')).toBeInTheDocument();
+        expect(screen.getByText('15')).toBeInTheDocument();
+      }
+    );
+
+    it('handles zero as day number', () => {
+      render(<DayCell {...defaultProps} dayNumber={0} />);
+
+      expect(screen.getByText('0')).toBeInTheDocument();
     });
 
-    it('renders with isToday true', () => {
-      render(<DayCell {...defaultProps} isToday={true} />);
+    it('handles day 31', () => {
+      render(<DayCell {...defaultProps} dayNumber={31} />);
 
-      expect(screen.getByText('15')).toBeInTheDocument();
-    });
-
-    it('renders with both isCurrentMonth false and isToday true', () => {
-      render(
-        <DayCell {...defaultProps} isCurrentMonth={false} isToday={true} />
-      );
-
-      expect(screen.getByText('15')).toBeInTheDocument();
+      expect(screen.getByText('31')).toBeInTheDocument();
     });
   });
 });
