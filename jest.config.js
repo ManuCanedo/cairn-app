@@ -8,10 +8,12 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
+    'app/**/*.{ts,tsx}',
     '!src/types/**',
     '!**/*.d.ts',
     '!**/node_modules/**',
     '!**/__tests__/**',
+    '!**/index.ts', // Barrel exports only - no logic to test
   ],
   coverageThreshold: {
     global: {
