@@ -1,16 +1,18 @@
-# Cairn Habits App - Comprehensive Test Plan
+# Cairn Habits App - Unit/Integration Test Case Reference
+
+> **Scope:** This document covers unit and integration tests (Jest). For E2E browser-based tests, see [SMOKE_TEST_PLAN.md](./SMOKE_TEST_PLAN.md).
 
 ## Current Status
 
-| Metric | Coverage |
-|--------|----------|
+| Metric     | Coverage       |
+| ---------- | -------------- |
 | Statements | 100% (154/154) |
-| Branches | 100% (62/62) |
-| Functions | 100% (42/42) |
-| Lines | 100% (150/150) |
-| Tests | 136 passing |
+| Branches   | 100% (62/62)   |
+| Functions  | 100% (42/42)   |
+| Lines      | 100% (150/150) |
+| Tests      | 136 passing    |
 
-*Last updated: 2026-01-31*
+_Last updated: 2026-01-31_
 
 ## Overview
 
@@ -20,21 +22,21 @@ This document provides a detailed test plan for achieving 100% code coverage of 
 
 ## Priority Order for Testing
 
-| Priority | File | Rationale |
-|----------|------|-----------|
-| P0 | `src/services/google-calendar.ts` | Core business logic, API interactions, error handling |
-| P0 | `src/store/auth.ts` | State management, persistence, auth flow |
-| P1 | `src/services/google-auth.ts` | OAuth flow, user fetching |
-| P1 | `src/config/constants.ts` | Environment configuration, validation |
-| P2 | `src/components/Calendar/MonthView.tsx` | Complex date logic, event grouping |
-| P2 | `src/components/Calendar/DayCell.tsx` | Conditional rendering, event display |
-| P2 | `src/components/Calendar/colors.ts` | Pure utility functions |
-| P3 | `src/components/Calendar/CalendarHeader.tsx` | Simple UI component |
-| P3 | `src/components/ui/ErrorBoundary.tsx` | Error handling component |
-| P3 | `app/_layout.tsx` | Navigation routing logic |
-| P3 | `app/index.tsx` | Screen composition, integration |
-| P3 | `app/login.tsx` | Screen composition |
-| P4 | `src/types/calendar.ts` | Types only - no runtime tests needed |
+| Priority | File                                         | Rationale                                             |
+| -------- | -------------------------------------------- | ----------------------------------------------------- |
+| P0       | `src/services/google-calendar.ts`            | Core business logic, API interactions, error handling |
+| P0       | `src/store/auth.ts`                          | State management, persistence, auth flow              |
+| P1       | `src/services/google-auth.ts`                | OAuth flow, user fetching                             |
+| P1       | `src/config/constants.ts`                    | Environment configuration, validation                 |
+| P2       | `src/components/Calendar/MonthView.tsx`      | Complex date logic, event grouping                    |
+| P2       | `src/components/Calendar/DayCell.tsx`        | Conditional rendering, event display                  |
+| P2       | `src/components/Calendar/colors.ts`          | Pure utility functions                                |
+| P3       | `src/components/Calendar/CalendarHeader.tsx` | Simple UI component                                   |
+| P3       | `src/components/ui/ErrorBoundary.tsx`        | Error handling component                              |
+| P3       | `app/_layout.tsx`                            | Navigation routing logic                              |
+| P3       | `app/index.tsx`                              | Screen composition, integration                       |
+| P3       | `app/login.tsx`                              | Screen composition                                    |
+| P4       | `src/types/calendar.ts`                      | Types only - no runtime tests needed                  |
 
 ---
 
@@ -77,8 +79,8 @@ export const mockResponse = { type: 'success', authentication: null };
 jest.mock('expo-auth-session/providers/google', () => ({
   useAuthRequest: () => [
     { type: 'request' }, // request object
-    mockResponse,        // response object  
-    mockPromptAsync,     // promptAsync function
+    mockResponse, // response object
+    mockPromptAsync, // promptAsync function
   ],
 }));
 ```
@@ -118,7 +120,7 @@ export const createMockAuthStore = (initialState = {}) => {
     isLoading: false,
     isAuthenticated: false,
   };
-  
+
   return create((set, get) => ({
     ...defaultState,
     ...initialState,
@@ -202,9 +204,9 @@ __tests__/
 
 #### Functions to Test
 
-| Function | Lines | Description |
-|----------|-------|-------------|
-| `getEnvVar` | 4-9 | Retrieves environment variables with fallback support |
+| Function    | Lines | Description                                           |
+| ----------- | ----- | ----------------------------------------------------- |
+| `getEnvVar` | 4-9   | Retrieves environment variables with fallback support |
 
 #### Test Cases (5 total)
 
@@ -232,12 +234,14 @@ describe('exported constants', () => {
 ```
 
 #### Edge Cases
+
 - Empty string value in config (should use fallback)
 - `expoConfig` is undefined
 - `extra` is undefined
 - Value is `null` vs `undefined`
 
 #### Mocks Required
+
 - `expo-constants`
 
 #### Estimated Test Cases: 7
@@ -250,13 +254,13 @@ describe('exported constants', () => {
 
 #### Functions to Test
 
-| Function | Lines | Description |
-|----------|-------|-------------|
-| `setAuth` | 42-51 | Sets authentication state |
-| `setLoading` | 53-55 | Sets loading state |
-| `logout` | 57-66 | Clears all auth state |
-| `isTokenExpired` | 68-71 | Checks token expiration |
-| `partialize` | 76-82 | Persists specific state fields |
+| Function         | Lines | Description                    |
+| ---------------- | ----- | ------------------------------ |
+| `setAuth`        | 42-51 | Sets authentication state      |
+| `setLoading`     | 53-55 | Sets loading state             |
+| `logout`         | 57-66 | Clears all auth state          |
+| `isTokenExpired` | 68-71 | Checks token expiration        |
+| `partialize`     | 76-82 | Persists specific state fields |
 
 #### Test Cases (12 total)
 
@@ -312,11 +316,13 @@ describe('useAuthStore', () => {
 ```
 
 #### Edge Cases
+
 - Token expiration at exact boundary (`Date.now() === expiresAt`)
 - Partial user object
 - Multiple rapid state updates
 
 #### Mocks Required
+
 - `@react-native-async-storage/async-storage`
 
 #### Estimated Test Cases: 20
@@ -329,10 +335,10 @@ describe('useAuthStore', () => {
 
 #### Functions to Test
 
-| Function | Lines | Description |
-|----------|-------|-------------|
-| `useGoogleAuth` (hook) | 11-59 | Main auth hook |
-| `fetchUserInfo` | 61-71 | Fetches user profile from Google API |
+| Function               | Lines | Description                          |
+| ---------------------- | ----- | ------------------------------------ |
+| `useGoogleAuth` (hook) | 11-59 | Main auth hook                       |
+| `fetchUserInfo`        | 61-71 | Fetches user profile from Google API |
 
 #### Test Cases (15 total)
 
@@ -384,12 +390,14 @@ describe('fetchUserInfo', () => {
 ```
 
 #### Edge Cases
+
 - Response with missing authentication object
 - Network failure during user info fetch
 - Invalid JSON response
 - Response type "cancel"
 
 #### Mocks Required
+
 - `expo-auth-session/providers/google`
 - `expo-web-browser`
 - `fetch` (global)
@@ -405,16 +413,16 @@ describe('fetchUserInfo', () => {
 
 #### Functions to Test
 
-| Function | Lines | Description |
-|----------|-------|-------------|
-| `GoogleCalendarError` (class) | 12-21 | Custom error class |
-| `AuthExpiredError` (class) | 23-28 | 401 error class |
-| `apiRequest` | 30-66 | Generic API request wrapper |
-| `wrapError` | 69-75 | Error wrapper utility |
-| `getOrCreateCairnCalendar` | 78-113 | Get or create Cairn calendar |
-| `listEvents` | 116-139 | List calendar events |
-| `createAllDayEvent` | 142-169 | Create all-day event |
-| `deleteEvent` | 172-188 | Delete event |
+| Function                      | Lines   | Description                  |
+| ----------------------------- | ------- | ---------------------------- |
+| `GoogleCalendarError` (class) | 12-21   | Custom error class           |
+| `AuthExpiredError` (class)    | 23-28   | 401 error class              |
+| `apiRequest`                  | 30-66   | Generic API request wrapper  |
+| `wrapError`                   | 69-75   | Error wrapper utility        |
+| `getOrCreateCairnCalendar`    | 78-113  | Get or create Cairn calendar |
+| `listEvents`                  | 116-139 | List calendar events         |
+| `createAllDayEvent`           | 142-169 | Create all-day event         |
+| `deleteEvent`                 | 172-188 | Delete event                 |
 
 #### Test Cases (35 total)
 
@@ -518,6 +526,7 @@ describe('deleteEvent', () => {
 ```
 
 #### Edge Cases
+
 - Empty calendar list
 - Calendar with similar name but not exact match "Cairn"
 - Invalid date strings
@@ -526,6 +535,7 @@ describe('deleteEvent', () => {
 - Large response pagination (nextPageToken)
 
 #### Mocks Required
+
 - `fetch` (global)
 - `../store/auth` (useAuthStore.getState)
 
@@ -562,8 +572,8 @@ expectType<string>(event.summary);
 
 #### Functions to Test
 
-| Function | Lines | Description |
-|----------|-------|-------------|
+| Function        | Lines | Description                |
+| --------------- | ----- | -------------------------- |
 | `getEventColor` | 19-22 | Maps color ID to hex color |
 
 #### Test Cases (8 total)
@@ -591,11 +601,13 @@ describe('getEventColor', () => {
 ```
 
 #### Edge Cases
+
 - Numeric colorId vs string colorId ("1" vs 1)
 - Out of range colorId ("0", "12", "100")
 - Non-numeric string colorId ("abc")
 
 #### Mocks Required
+
 - None (pure function)
 
 #### Estimated Test Cases: 10
@@ -608,8 +620,8 @@ describe('getEventColor', () => {
 
 #### Functions to Test
 
-| Component | Lines | Description |
-|-----------|-------|-------------|
+| Component        | Lines | Description             |
+| ---------------- | ----- | ----------------------- |
 | `CalendarHeader` | 11-27 | Month navigation header |
 
 #### Test Cases (6 total)
@@ -634,10 +646,12 @@ describe('CalendarHeader', () => {
 ```
 
 #### Edge Cases
+
 - Year boundaries (December -> January)
 - Different locales (if applicable)
 
 #### Mocks Required
+
 - `date-fns` (optional - can use real implementation)
 
 #### Estimated Test Cases: 6
@@ -650,8 +664,8 @@ describe('CalendarHeader', () => {
 
 #### Functions to Test
 
-| Component | Lines | Description |
-|-----------|-------|-------------|
+| Component | Lines | Description                          |
+| --------- | ----- | ------------------------------------ |
 | `DayCell` | 13-41 | Individual day cell in calendar grid |
 
 #### Test Cases (12 total)
@@ -682,12 +696,14 @@ describe('DayCell', () => {
 ```
 
 #### Edge Cases
+
 - Empty eventColors array
 - eventColors with empty strings (should use default color)
 - Very large number of events
 - Combined states (isToday && !isCurrentMonth)
 
 #### Mocks Required
+
 - `./colors` (getEventColor)
 
 #### Estimated Test Cases: 12
@@ -700,10 +716,10 @@ describe('DayCell', () => {
 
 #### Functions to Test
 
-| Function/Component | Lines | Description |
-|-------------------|-------|-------------|
-| `getEventDate` | 28-37 | Extracts date from event |
-| `MonthView` | 39-124 | Full month calendar view |
+| Function/Component | Lines  | Description              |
+| ------------------ | ------ | ------------------------ |
+| `getEventDate`     | 28-37  | Extracts date from event |
+| `MonthView`        | 39-124 | Full month calendar view |
 
 #### Test Cases (22 total)
 
@@ -756,6 +772,7 @@ describe('MonthView', () => {
 ```
 
 #### Edge Cases
+
 - February in leap year
 - Month with 6 weeks of days
 - Events spanning midnight
@@ -763,6 +780,7 @@ describe('MonthView', () => {
 - Year boundary navigation
 
 #### Mocks Required
+
 - `date-fns` (optional)
 - `./CalendarHeader`
 - `./DayCell`
@@ -777,12 +795,12 @@ describe('MonthView', () => {
 
 #### Functions to Test
 
-| Method | Lines | Description |
-|--------|-------|-------------|
+| Method                     | Lines | Description          |
+| -------------------------- | ----- | -------------------- |
 | `getDerivedStateFromError` | 18-20 | Static error handler |
-| `componentDidCatch` | 22-25 | Error logging |
-| `handleRetry` | 27-29 | Reset error state |
-| `render` | 31-51 | Render logic |
+| `componentDidCatch`        | 22-25 | Error logging        |
+| `handleRetry`              | 27-29 | Reset error state    |
+| `render`                   | 31-51 | Render logic         |
 
 #### Test Cases (10 total)
 
@@ -815,12 +833,14 @@ describe('ErrorBoundary', () => {
 ```
 
 #### Edge Cases
+
 - Error without message
 - Nested ErrorBoundary
 - Error during retry render
 - Custom fallback component
 
 #### Mocks Required
+
 - `console.error` (spy)
 
 #### Estimated Test Cases: 12
@@ -833,10 +853,10 @@ describe('ErrorBoundary', () => {
 
 #### Functions to Test
 
-| Component | Lines | Description |
-|-----------|-------|-------------|
-| `RootLayoutNav` | 7-49 | Navigation with auth routing |
-| `RootLayout` | 51-57 | Root layout wrapper |
+| Component       | Lines | Description                  |
+| --------------- | ----- | ---------------------------- |
+| `RootLayoutNav` | 7-49  | Navigation with auth routing |
+| `RootLayout`    | 51-57 | Root layout wrapper          |
 
 #### Test Cases (10 total)
 
@@ -872,11 +892,13 @@ describe('RootLayout', () => {
 ```
 
 #### Edge Cases
+
 - Navigation state key is null/undefined
 - Rapid auth state changes
 - Deep linking scenarios
 
 #### Mocks Required
+
 - `expo-router` (Stack, useRouter, useSegments, useRootNavigationState)
 - `../src/store/auth` (useAuthStore)
 - `../src/components/ui/ErrorBoundary`
@@ -891,8 +913,8 @@ describe('RootLayout', () => {
 
 #### Functions to Test
 
-| Component | Lines | Description |
-|-----------|-------|-------------|
+| Component    | Lines  | Description      |
+| ------------ | ------ | ---------------- |
 | `HomeScreen` | 11-146 | Main home screen |
 
 #### Test Cases (18 total)
@@ -938,12 +960,14 @@ describe('HomeScreen', () => {
 ```
 
 #### Edge Cases
+
 - User with very long name
 - Network failure during calendar init
 - Token expiration during month change
 - Empty events response
 
 #### Mocks Required
+
 - `../src/store/auth` (useAuthStore)
 - `../src/services/google-auth` (useGoogleAuth)
 - `../src/services/google-calendar`
@@ -959,9 +983,9 @@ describe('HomeScreen', () => {
 
 #### Functions to Test
 
-| Component | Lines | Description |
-|-----------|-------|-------------|
-| `LoginScreen` | 6-59 | Login screen |
+| Component     | Lines | Description  |
+| ------------- | ----- | ------------ |
+| `LoginScreen` | 6-59  | Login screen |
 
 #### Test Cases (10 total)
 
@@ -994,10 +1018,12 @@ describe('LoginScreen', () => {
 ```
 
 #### Edge Cases
+
 - Race condition between redirect and render
 - Button disabled styling
 
 #### Mocks Required
+
 - `../src/services/google-auth` (useGoogleAuth)
 - `../src/store/auth` (useAuthStore)
 - `expo-router` (Stack, Redirect)
@@ -1010,22 +1036,22 @@ describe('LoginScreen', () => {
 
 ### Total Test Cases by File
 
-| File | Test Cases |
-|------|------------|
-| `src/config/constants.ts` | 7 |
-| `src/store/auth.ts` | 20 |
-| `src/services/google-auth.ts` | 18 |
-| `src/services/google-calendar.ts` | 40 |
-| `src/types/calendar.ts` | 0 |
-| `src/components/Calendar/colors.ts` | 10 |
-| `src/components/Calendar/CalendarHeader.tsx` | 6 |
-| `src/components/Calendar/DayCell.tsx` | 12 |
-| `src/components/Calendar/MonthView.tsx` | 22 |
-| `src/components/ui/ErrorBoundary.tsx` | 12 |
-| `app/_layout.tsx` | 10 |
-| `app/index.tsx` | 18 |
-| `app/login.tsx` | 12 |
-| **TOTAL** | **187** |
+| File                                         | Test Cases |
+| -------------------------------------------- | ---------- |
+| `src/config/constants.ts`                    | 7          |
+| `src/store/auth.ts`                          | 20         |
+| `src/services/google-auth.ts`                | 18         |
+| `src/services/google-calendar.ts`            | 40         |
+| `src/types/calendar.ts`                      | 0          |
+| `src/components/Calendar/colors.ts`          | 10         |
+| `src/components/Calendar/CalendarHeader.tsx` | 6          |
+| `src/components/Calendar/DayCell.tsx`        | 12         |
+| `src/components/Calendar/MonthView.tsx`      | 22         |
+| `src/components/ui/ErrorBoundary.tsx`        | 12         |
+| `app/_layout.tsx`                            | 10         |
+| `app/index.tsx`                              | 18         |
+| `app/login.tsx`                              | 12         |
+| **TOTAL**                                    | **187**    |
 
 ### Test Dependencies
 
@@ -1052,12 +1078,7 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native|expo|@expo|expo-.*|@unimodules|unimodules|sentry-expo|native-base|react-native-svg|zustand)/)',
   ],
-  collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    'app/**/*.{ts,tsx}',
-    '!**/*.d.ts',
-    '!**/types/**',
-  ],
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', 'app/**/*.{ts,tsx}', '!**/*.d.ts', '!**/types/**'],
   coverageThreshold: {
     global: {
       branches: 100,
@@ -1095,5 +1116,5 @@ module.exports = {
 
 ---
 
-*Generated: 2026-01-31*
-*Total Estimated Tests: 187*
+_Generated: 2026-01-31_
+_Total Estimated Tests: 187_
