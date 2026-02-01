@@ -11,13 +11,13 @@
 > **⚠️ DOCUMENT STATUS**: Point-in-time architecture review from 2026-01-31.
 > Many P0 issues have been resolved. Re-review needed before using as implementation guide.
 >
-> | Issue                      | Status                        |
-> | -------------------------- | ----------------------------- |
-> | P0.2 Hardcoded credentials | Partially fixed               |
-> | P0.3 No ErrorBoundary      | **RESOLVED**                  |
-> | P0.4 401 error handling    | **RESOLVED**                  |
-> | P0.1 Token refresh         | Still valid - not implemented |
-> | P2.7 Dead code files       | **RESOLVED** - files removed  |
+> | Issue                      | Status                                         |
+> | -------------------------- | ---------------------------------------------- |
+> | P0.1 Token refresh         | **RESOLVED** - platform-aware refresh (PR #31) |
+> | P0.2 Hardcoded credentials | **RESOLVED** - removed fallback                |
+> | P0.3 No ErrorBoundary      | **RESOLVED**                                   |
+> | P0.4 401 error handling    | **RESOLVED**                                   |
+> | P2.7 Dead code files       | **RESOLVED** - files removed                   |
 
 ---
 
@@ -43,25 +43,25 @@ The Cairn codebase demonstrates solid foundational patterns for an early-stage R
 
 ### Strengths
 
-| Area | Implementation | Assessment |
-|------|----------------|------------|
-| **State Management** | Zustand with persist middleware | Excellent choice. Lightweight, TypeScript-native, simple API |
-| **Authentication Flow** | expo-auth-session + Google OAuth | Correct approach for Expo managed workflow |
-| **API Layer** | Centralized `apiRequest<T>` helper | Good pattern. Single point for auth headers and error handling |
-| **Component Structure** | Feature-based organization (Calendar/*) | Clean separation, barrel exports |
-| **Type Safety** | TypeScript with strict mode | Proper typing for API responses and component props |
-| **Date Handling** | date-fns | Lightweight, tree-shakeable, immutable |
+| Area                    | Implementation                           | Assessment                                                     |
+| ----------------------- | ---------------------------------------- | -------------------------------------------------------------- |
+| **State Management**    | Zustand with persist middleware          | Excellent choice. Lightweight, TypeScript-native, simple API   |
+| **Authentication Flow** | expo-auth-session + Google OAuth         | Correct approach for Expo managed workflow                     |
+| **API Layer**           | Centralized `apiRequest<T>` helper       | Good pattern. Single point for auth headers and error handling |
+| **Component Structure** | Feature-based organization (Calendar/\*) | Clean separation, barrel exports                               |
+| **Type Safety**         | TypeScript with strict mode              | Proper typing for API responses and component props            |
+| **Date Handling**       | date-fns                                 | Lightweight, tree-shakeable, immutable                         |
 
 ### Weaknesses
 
-| Area | Issue | Risk Level |
-|------|-------|------------|
-| **Token Management** | No refresh token implementation | **CRITICAL** - Users will be logged out after 1 hour |
-| **Environment Config** | Hardcoded client ID in source | **CRITICAL** - Security risk, blocks multi-env deploys |
-| **Error Handling** | No global error boundary | **HIGH** - Crashes show white screen |
-| **Offline Support** | None implemented | **HIGH** - App unusable without network |
-| **Loading States** | Inconsistent, some missing | **MEDIUM** - Poor UX |
-| **Dead Code** | `HabitItem.tsx`, `habits.ts` unused | **LOW** - Confusing for maintainers |
+| Area                   | Issue                               | Risk Level                                             |
+| ---------------------- | ----------------------------------- | ------------------------------------------------------ |
+| **Token Management**   | No refresh token implementation     | **CRITICAL** - Users will be logged out after 1 hour   |
+| **Environment Config** | Hardcoded client ID in source       | **CRITICAL** - Security risk, blocks multi-env deploys |
+| **Error Handling**     | No global error boundary            | **HIGH** - Crashes show white screen                   |
+| **Offline Support**    | None implemented                    | **HIGH** - App unusable without network                |
+| **Loading States**     | Inconsistent, some missing          | **MEDIUM** - Poor UX                                   |
+| **Dead Code**          | `HabitItem.tsx`, `habits.ts` unused | **LOW** - Confusing for maintainers                    |
 
 ### Architecture Diagram (Current)
 
@@ -87,6 +87,7 @@ The Cairn codebase demonstrates solid foundational patterns for an early-stage R
 **Problem:** OAuth access tokens expire after ~1 hour. Current implementation has no refresh mechanism.
 
 **Evidence:**
+
 - `/Users/manuel.canedo/Dev/personal/habits-app/src/store/auth.ts:67-71` - `isTokenExpired()` exists but is never called
 - `/Users/manuel.canedo/Dev/personal/habits-app/src/services/google-auth.ts` - No refresh logic
 - Token expiry stored but never checked before API calls
@@ -94,6 +95,7 @@ The Cairn codebase demonstrates solid foundational patterns for an early-stage R
 **Impact:** Users silently fail API calls after 1 hour, or get logged out.
 
 **Solution:**
+
 ```typescript
 // src/services/token-manager.ts
 export async function getValidAccessToken(): Promise<string> {
@@ -114,6 +116,7 @@ export async function getValidAccessToken(): Promise<string> {
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Token validity checked before every API call
 - [ ] Refresh token used automatically when access token expires
 - [ ] User redirected to login only when refresh fails
@@ -126,14 +129,17 @@ export async function getValidAccessToken(): Promise<string> {
 **Problem:** Google Client ID hardcoded in source code.
 
 **Evidence:**
+
 - `/Users/manuel.canedo/Dev/personal/habits-app/src/config/constants.ts:3` - Client ID in plain text
 
 **Impact:**
+
 - Cannot deploy to different environments (dev/staging/prod)
 - Security risk if repo becomes public
 - App Store review may flag hardcoded credentials
 
 **Solution:**
+
 ```typescript
 // src/config/constants.ts
 import Constants from 'expo-constants';
@@ -166,6 +172,7 @@ export default {
 ```
 
 **Acceptance Criteria:**
+
 - [ ] All secrets loaded from environment variables
 - [ ] App fails fast with clear error if env vars missing
 - [ ] `.env.example` documents all required variables
@@ -178,12 +185,14 @@ export default {
 **Problem:** Unhandled errors crash the app with a white screen.
 
 **Evidence:**
+
 - No ErrorBoundary component in `/Users/manuel.canedo/Dev/personal/habits-app/app/_layout.tsx`
 - API errors only logged to console
 
 **Impact:** Users see blank screen on crash, no way to recover.
 
 **Solution:**
+
 ```typescript
 // src/components/ErrorBoundary.tsx
 import { Component, ReactNode } from 'react';
@@ -232,7 +241,8 @@ export class ErrorBoundary extends Component<Props, State> {
 ```
 
 **Acceptance Criteria:**
-- [ ] ErrorBoundary wraps the app in _layout.tsx
+
+- [ ] ErrorBoundary wraps the app in \_layout.tsx
 - [ ] Users see friendly error screen, not white screen
 - [ ] Retry button allows recovery without app restart
 - [ ] Errors logged for debugging
@@ -244,11 +254,13 @@ export class ErrorBoundary extends Component<Props, State> {
 **Problem:** 401 errors from Google API are not handled gracefully.
 
 **Evidence:**
+
 - `/Users/manuel.canedo/Dev/personal/habits-app/src/services/google-calendar.ts:36-43` - Generic error handling, no 401 special case
 
 **Impact:** Expired tokens cause confusing error messages instead of re-auth flow.
 
 **Solution:**
+
 ```typescript
 // In apiRequest function
 if (response.status === 401) {
@@ -259,6 +271,7 @@ if (response.status === 401) {
 ```
 
 **Acceptance Criteria:**
+
 - [ ] 401 responses trigger logout and redirect to login
 - [ ] User sees clear message about session expiry
 - [ ] Other API errors show appropriate messages
@@ -274,6 +287,7 @@ if (response.status === 401) {
 **Current State:** Every month change triggers a fresh API call.
 
 **Solution:**
+
 ```typescript
 // src/store/calendar-cache.ts
 interface CalendarCache {
@@ -288,12 +302,14 @@ interface CalendarCache {
 ```
 
 **Caching Strategy:**
+
 1. Cache events by month (key: `YYYY-MM`)
 2. Cache `calendarId` to avoid lookup on every session
 3. Stale-while-revalidate: show cached data immediately, refresh in background
 4. Cache invalidation: 5 minutes for current month, 1 hour for past months
 
 **Acceptance Criteria:**
+
 - [ ] Previously viewed months load instantly from cache
 - [ ] CalendarId persisted, not re-fetched every session
 - [ ] Offline indicator shown when network unavailable
@@ -306,6 +322,7 @@ interface CalendarCache {
 **Problem:** Each API call handles auth headers independently; no central retry logic.
 
 **Solution:**
+
 ```typescript
 // src/services/api-client.ts
 class ApiClient {
@@ -339,6 +356,7 @@ export const calendarApi = new ApiClient('https://www.googleapis.com/calendar/v3
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Single ApiClient class handles all HTTP concerns
 - [ ] Automatic token refresh before requests
 - [ ] Rate limit handling with exponential backoff
@@ -351,6 +369,7 @@ export const calendarApi = new ApiClient('https://www.googleapis.com/calendar/v3
 **Problem:** Inconsistent loading states across the app.
 
 **Evidence:**
+
 - `/Users/manuel.canedo/Dev/personal/habits-app/app/index.tsx:113-117` - Loading overlay positioned absolutely
 - No skeleton screens
 - Loading state is local to component
@@ -366,15 +385,13 @@ interface AsyncState<T> {
   refetch: () => Promise<void>;
 }
 
-export function useAsyncState<T>(
-  fetcher: () => Promise<T>,
-  deps: unknown[] = []
-): AsyncState<T> {
+export function useAsyncState<T>(fetcher: () => Promise<T>, deps: unknown[] = []): AsyncState<T> {
   // Implementation with proper cleanup, error handling, and caching
 }
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Consistent loading indicators across all screens
 - [ ] Skeleton screens for calendar and lists
 - [ ] Pull-to-refresh functionality
@@ -387,6 +404,7 @@ export function useAsyncState<T>(
 **Problem:** No validation on user inputs for activity templates (Task 005).
 
 **Solution:**
+
 ```typescript
 // src/utils/validation.ts
 export const activityTemplateSchema = {
@@ -408,6 +426,7 @@ export const activityTemplateSchema = {
 ```
 
 **Acceptance Criteria:**
+
 - [ ] All user inputs validated before storage
 - [ ] Clear error messages for invalid inputs
 - [ ] XSS prevention (though React handles most)
@@ -420,13 +439,19 @@ export const activityTemplateSchema = {
 **Problem:** Single client ID used for all platforms; iOS/Android need platform-specific credentials.
 
 **Evidence:**
+
 - `/Users/manuel.canedo/Dev/personal/habits-app/src/services/google-auth.ts:13-16` - Only `clientId` used
 
 **Solution:**
+
 ```typescript
 // src/services/google-auth.ts
 import { Platform } from 'react-native';
-import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_ID_IOS, GOOGLE_CLIENT_ID_ANDROID } from '../config/constants';
+import {
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_ID_IOS,
+  GOOGLE_CLIENT_ID_ANDROID,
+} from '../config/constants';
 
 const [request, response, promptAsync] = Google.useAuthRequest({
   clientId: GOOGLE_CLIENT_ID, // Web
@@ -437,6 +462,7 @@ const [request, response, promptAsync] = Google.useAuthRequest({
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Separate OAuth credentials per platform
 - [ ] Google Cloud Console configured with all redirect URIs
 - [ ] OAuth works on iOS simulator
@@ -451,11 +477,13 @@ const [request, response, promptAsync] = Google.useAuthRequest({
 **Current State:** No tests exist.
 
 **Recommended Stack:**
+
 - **Unit Tests:** Jest + React Native Testing Library
 - **Component Tests:** Storybook (optional but helpful)
 - **E2E Tests:** Maestro or Detox (after MVP)
 
 **Priority Test Coverage:**
+
 1. Token refresh logic (P0.1)
 2. Calendar date calculations
 3. API error handling
@@ -510,6 +538,7 @@ export function captureException(error: Error, context?: Record<string, unknown>
 ### P2.3: Analytics
 
 **Recommended Events:**
+
 - `auth_success` / `auth_failure`
 - `calendar_month_viewed`
 - `activity_logged`
@@ -523,11 +552,13 @@ export function captureException(error: Error, context?: Record<string, unknown>
 ### P2.4: Performance Optimization
 
 **Current Concerns:**
+
 1. Calendar re-renders on every event change (memoization needed)
 2. Event grouping computed on every render
 3. No virtualization for long lists
 
 **Solutions:**
+
 ```typescript
 // Memoize expensive computations
 const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
@@ -546,11 +577,13 @@ const handleDayPress = useCallback((date: string) => {
 ### P2.5: Accessibility (a11y)
 
 **Current Gaps:**
+
 - No `accessibilityLabel` on interactive elements
 - Calendar navigation not keyboard accessible
 - Color-only indicators (dots) may be unclear to colorblind users
 
 **Fixes:**
+
 ```typescript
 <Pressable
   onPress={handlePrevMonth}
@@ -604,6 +637,7 @@ jobs:
 ### P2.7: Clean Up Dead Code
 
 **Files to Remove or Integrate:**
+
 - `/Users/manuel.canedo/Dev/personal/habits-app/src/components/HabitItem.tsx` - Unused, references old habits pattern
 - `/Users/manuel.canedo/Dev/personal/habits-app/src/store/habits.ts` - Unused, superseded by Calendar approach
 - `/Users/manuel.canedo/Dev/personal/habits-app/src/types/habit.ts` - Unused type definitions
@@ -688,35 +722,39 @@ cairn/
 ## Implementation Roadmap
 
 ### Phase 1: Critical Fixes (Week 1)
-| Task | Priority | Effort | Owner |
-|------|----------|--------|-------|
-| P0.2: Environment configuration | P0 | 2h | - |
-| P0.1: Token refresh implementation | P0 | 4h | - |
-| P0.3: Global error boundary | P0 | 2h | - |
-| P0.4: 401 error handling | P0 | 1h | - |
+
+| Task                               | Priority | Effort | Owner |
+| ---------------------------------- | -------- | ------ | ----- |
+| P0.2: Environment configuration    | P0       | 2h     | -     |
+| P0.1: Token refresh implementation | P0       | 4h     | -     |
+| P0.3: Global error boundary        | P0       | 2h     | -     |
+| P0.4: 401 error handling           | P0       | 1h     | -     |
 
 ### Phase 2: Complete Features (Week 2)
-| Task | Priority | Effort | Owner |
-|------|----------|--------|-------|
-| Task 005: Activity Templates CRUD | Feature | 6h | - |
-| Task 006: Activity Registration Flow | Feature | 4h | - |
-| P1.5: Platform OAuth config | P1 | 2h | - |
+
+| Task                                 | Priority | Effort | Owner |
+| ------------------------------------ | -------- | ------ | ----- |
+| Task 005: Activity Templates CRUD    | Feature  | 6h     | -     |
+| Task 006: Activity Registration Flow | Feature  | 4h     | -     |
+| P1.5: Platform OAuth config          | P1       | 2h     | -     |
 
 ### Phase 3: Hardening (Week 3)
-| Task | Priority | Effort | Owner |
-|------|----------|--------|-------|
-| P1.1: Offline support / caching | P1 | 6h | - |
-| P1.2: Centralized API client | P1 | 3h | - |
-| P1.3: Loading state consistency | P1 | 3h | - |
-| Task 007: Integration & Polish | Feature | 4h | - |
+
+| Task                            | Priority | Effort | Owner |
+| ------------------------------- | -------- | ------ | ----- |
+| P1.1: Offline support / caching | P1       | 6h     | -     |
+| P1.2: Centralized API client    | P1       | 3h     | -     |
+| P1.3: Loading state consistency | P1       | 3h     | -     |
+| Task 007: Integration & Polish  | Feature  | 4h     | -     |
 
 ### Phase 4: Production Prep (Week 4)
-| Task | Priority | Effort | Owner |
-|------|----------|--------|-------|
-| P2.1: Testing infrastructure | P2 | 6h | - |
-| P2.2: Error monitoring (Sentry) | P2 | 2h | - |
-| P2.6: CI/CD pipeline | P2 | 4h | - |
-| P2.7: Clean up dead code | P2 | 1h | - |
+
+| Task                            | Priority | Effort | Owner |
+| ------------------------------- | -------- | ------ | ----- |
+| P2.1: Testing infrastructure    | P2       | 6h     | -     |
+| P2.2: Error monitoring (Sentry) | P2       | 2h     | -     |
+| P2.6: CI/CD pipeline            | P2       | 4h     | -     |
+| P2.7: Clean up dead code        | P2       | 1h     | -     |
 
 ---
 
@@ -761,23 +799,23 @@ cairn/
 
 ### Caching Strategy
 
-| Data Type | Cache Duration | Storage | Invalidation |
-|-----------|----------------|---------|--------------|
-| CalendarId | Forever | AsyncStorage | Manual only |
-| Current month events | 5 minutes | Memory | On create/delete |
-| Past month events | 1 hour | Memory | On app restart |
-| Activity templates | Forever | AsyncStorage | On CRUD |
+| Data Type            | Cache Duration | Storage      | Invalidation     |
+| -------------------- | -------------- | ------------ | ---------------- |
+| CalendarId           | Forever        | AsyncStorage | Manual only      |
+| Current month events | 5 minutes      | Memory       | On create/delete |
+| Past month events    | 1 hour         | Memory       | On app restart   |
+| Activity templates   | Forever        | AsyncStorage | On CRUD          |
 
 ### Error Classification
 
-| Error Type | User Message | Action |
-|------------|--------------|--------|
-| Network timeout | "Connection timed out" | Retry button |
-| 401 Unauthorized | "Session expired" | Redirect to login |
-| 403 Forbidden | "Access denied" | Show calendar permissions needed |
-| 404 Not Found | "Calendar not found" | Re-create Cairn calendar |
-| 429 Rate Limited | "Too many requests" | Auto-retry with backoff |
-| 5xx Server Error | "Google Calendar unavailable" | Retry in 30s |
+| Error Type       | User Message                  | Action                           |
+| ---------------- | ----------------------------- | -------------------------------- |
+| Network timeout  | "Connection timed out"        | Retry button                     |
+| 401 Unauthorized | "Session expired"             | Redirect to login                |
+| 403 Forbidden    | "Access denied"               | Show calendar permissions needed |
+| 404 Not Found    | "Calendar not found"          | Re-create Cairn calendar         |
+| 429 Rate Limited | "Too many requests"           | Auto-retry with backoff          |
+| 5xx Server Error | "Google Calendar unavailable" | Retry in 30s                     |
 
 ---
 
@@ -812,17 +850,17 @@ cairn/
 
 ## Appendix: File Reference
 
-| File | Purpose | Status |
-|------|---------|--------|
-| `app/_layout.tsx` | Root layout, auth guard | Needs ErrorBoundary |
-| `app/index.tsx` | Home screen with calendar | Working |
-| `app/login.tsx` | Google OAuth login | Working |
-| `src/store/auth.ts` | Auth state + persistence | Needs token refresh |
-| `src/services/google-auth.ts` | OAuth flow | Needs platform IDs |
-| `src/services/google-calendar.ts` | Calendar API | Needs 401 handling |
-| `src/components/Calendar/*` | Calendar UI | Working |
-| `src/config/constants.ts` | Config values | **Hardcoded secrets** |
+| File                              | Purpose                   | Status                |
+| --------------------------------- | ------------------------- | --------------------- |
+| `app/_layout.tsx`                 | Root layout, auth guard   | Needs ErrorBoundary   |
+| `app/index.tsx`                   | Home screen with calendar | Working               |
+| `app/login.tsx`                   | Google OAuth login        | Working               |
+| `src/store/auth.ts`               | Auth state + persistence  | Needs token refresh   |
+| `src/services/google-auth.ts`     | OAuth flow                | Needs platform IDs    |
+| `src/services/google-calendar.ts` | Calendar API              | Needs 401 handling    |
+| `src/components/Calendar/*`       | Calendar UI               | Working               |
+| `src/config/constants.ts`         | Config values             | **Hardcoded secrets** |
 
 ---
 
-*Last updated: 2026-01-31*
+_Last updated: 2026-01-31_
