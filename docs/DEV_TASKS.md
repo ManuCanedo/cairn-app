@@ -4,10 +4,49 @@ This file contains development tasks to be executed by Claude Code agents.
 
 **Instructions for Claude Code:**
 1. Read the task marked as `[ACTIVE]`
-2. Execute the steps described
-3. Verify the acceptance criteria
-4. Mark the task as `[DONE]` and add notes if necessary
-5. If there are blockers, mark it as `[BLOCKED]` with explanation
+2. Execute the steps described using TDD (Red/Green/Refactor)
+3. **REQUIRED: Run code-simplifier agent review before testing**
+4. Run all checks: `npm run typecheck && npm test`
+5. Verify the acceptance criteria
+6. Mark the task as `[DONE]` and add notes if necessary
+7. If there are blockers, mark it as `[BLOCKED]` with explanation
+
+See `docs/AGENT_WORKFLOW.md` for the complete workflow.
+
+---
+
+## Task Template
+
+Use this template for all new tasks. See `docs/AGENT_WORKFLOW.md` for the complete execution workflow.
+
+```markdown
+## Task XXX: [Title] [STATUS]
+
+### Context
+[Why this task exists. What problem it solves.]
+
+### Prerequisites
+- Task NNN completed (specifically need: `functionName` from `file.ts`)
+
+### Objective
+[1-2 sentences max]
+
+### Files to Create/Modify
+| File | Action | Notes |
+|------|--------|-------|
+| `src/path/file.ts` | Create | Description |
+| `src/__tests__/path/file.test.ts` | Create | Test coverage |
+
+### Acceptance Criteria
+- [ ] [Specific, testable criterion 1]
+- [ ] [Specific, testable criterion 2]
+- [ ] code-simplifier review: DONE
+- [ ] TypeScript compiles: `npm run typecheck`
+- [ ] Tests pass: `npm test`
+
+### Rollback Plan
+If task fails: `git reset --hard pre-task-XXX`
+```
 
 ---
 
@@ -205,7 +244,7 @@ async function deleteEvent(
 ): Promise<void>
 ```
 
-### Files to Create/modificar
+### Files to Create/Modify
 - Crear: `src/services/google-calendar.ts`
 - Crear: `src/types/calendar.ts` (tipos TypeScript)
 
