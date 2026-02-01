@@ -1,5 +1,14 @@
 // Dynamic Expo configuration
 // Environment variables are loaded at build time
+
+// Validate required environment variables
+if (!process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID) {
+  console.warn(
+    'WARNING: EXPO_PUBLIC_GOOGLE_CLIENT_ID is not set. ' +
+      'Google OAuth will not work. See .env.example for setup instructions.'
+  );
+}
+
 export default {
   expo: {
     name: 'Cairn',
@@ -34,11 +43,11 @@ export default {
     plugins: ['expo-router'],
     extra: {
       // OAuth credentials - use EXPO_PUBLIC_ prefix for Expo to load them
-      // Fallback to hardcoded values for development
-      googleClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '200611301377-gn4n7u9b89v1g1i0aq0e8dbrmler57dt.apps.googleusercontent.com',
-      googleClientIdIos: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS || '',
-      googleClientIdAndroid: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID || '',
-      expoUsername: process.env.EXPO_PUBLIC_USERNAME || 'manuel.canedo',
+      // See .env.example for required environment variables
+      googleClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+      googleClientIdIos: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS,
+      googleClientIdAndroid: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID,
+      expoUsername: process.env.EXPO_PUBLIC_USERNAME,
       appSlug: 'cairn',
     },
   },
