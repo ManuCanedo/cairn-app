@@ -136,12 +136,100 @@ git push -u origin feature/task-XXX
 gh pr create --title "feat: task XXX description" --body "..."
 ```
 
-### PR Requires Human Review If:
+## PR Review Process (REQUIRED)
 
-- Architecture changes
-- New dependencies added
-- API contract changes
-- Security-related changes
+**All PRs require approval from a principal agent before merge.**
+
+### Who Can Review
+
+Only **principal-cpp-architect** agents can review and approve PRs. The principal agent acts as an adversarial reviewer to ensure quality.
+
+> **Note:** `principal-cpp-architect` is a general-purpose adversarial reviewer agent available in Claude Code, used across all project types regardless of language.
+
+### Principal Review Checklist
+
+The principal agent MUST verify:
+
+1. **Need for changes**: Does this change address a documented task, bug report, or explicit user request? Reject speculative or undocumented changes.
+2. **Implementation quality**: Is the code clean, maintainable, and follows best practices?
+3. **Protocol compliance**:
+   - [ ] TDD was followed (tests written first)
+   - [ ] code-simplifier review was completed
+   - [ ] Acceptance criteria are met
+   - [ ] No unnecessary changes or scope creep
+4. **No regressions**: Do all tests pass? Is coverage maintained?
+
+### Comment Format
+
+Principal agents MUST prefix all review comments with:
+
+```
+[AI-PRINCIPAL] Your comment here
+```
+
+Example:
+```
+[AI-PRINCIPAL] This function has too many responsibilities. Consider extracting
+the validation logic into a separate helper to improve testability.
+```
+
+### Addressing Review Comments
+
+For each principal comment, the developer MUST either:
+
+1. **Implement the suggestion**: Make the requested change and reply with what was done
+2. **Clarify and request re-review**: If you disagree, explain your reasoning clearly and ask the principal to reconsider
+
+**Do NOT ignore comments or mark them as resolved without action.**
+
+### Review Cycle
+
+```
+Developer creates PR
+       ↓
+Request review: Task(subagent_type="principal-cpp-architect", prompt="Review PR #XX adversarially...")
+       ↓
+Principal leaves [AI-PRINCIPAL] comments
+       ↓
+Developer addresses ALL comments
+       ↓
+Developer requests re-review
+       ↓
+Principal approves (or requests more changes)
+       ↓
+Merge (1 approval required)
+```
+
+### How to Request Principal Review
+
+```
+Task(subagent_type="principal-cpp-architect", prompt="
+Adversarially review PR #XX at https://github.com/OWNER/REPO/pull/XX
+
+Verify:
+1. The changes are actually needed
+2. Implementation quality is high
+3. TDD and code-simplifier protocols were followed
+4. No scope creep or unnecessary modifications
+
+Leave [AI-PRINCIPAL] prefixed comments on the PR for any concerns.
+Approve only if all criteria are met.
+")
+```
+
+### Human Override
+
+Human reviewers can override principal decisions when:
+- The principal and developer reach an impasse after 2 review cycles
+- The change is time-sensitive and meets basic quality standards
+- Domain expertise not captured by the principal is required
+
+To request human review, add the `needs-human-review` label to the PR.
+
+Humans can always:
+- Override principal decisions
+- Approve PRs directly
+- Request additional changes
 
 ## Complete Workflow Checklist
 
@@ -158,6 +246,10 @@ gh pr create --title "feat: task XXX description" --body "..."
 [ ] 10. Verify acceptance criteria
 [ ] 11. Commit with proper message
 [ ] 12. Push and create PR
+[ ] 13. **Request principal-cpp-architect review** <-- REQUIRED
+[ ] 14. Address all [AI-PRINCIPAL] comments
+[ ] 15. Get principal approval
+[ ] 16. Merge
 ```
 
 ## Recovery from Mistakes
