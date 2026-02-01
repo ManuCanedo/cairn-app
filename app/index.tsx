@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 
 export default function HomeScreen() {
-  const { user, accessToken } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const { signOut } = useGoogleAuth();
   const { showWarning, minutesRemaining } = useTokenWarning();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -32,19 +32,18 @@ export default function HomeScreen() {
   // Initialize calendar and load events for current month
   useEffect(() => {
     async function init() {
-      if (!accessToken) return;
+      if (!isAuthenticated) return;
 
       setIsLoading(true);
       setError(null);
 
       try {
-        const calId = await getOrCreateCairnCalendar(accessToken);
+        const calId = await getOrCreateCairnCalendar();
         setCalendarId(calId);
 
         const monthStart = startOfMonth(today);
         const monthEnd = endOfMonth(today);
         const fetchedEvents = await listEvents(
-          accessToken,
           calId,
           format(monthStart, 'yyyy-MM-dd'),
           format(monthEnd, 'yyyy-MM-dd')
@@ -59,11 +58,11 @@ export default function HomeScreen() {
     }
 
     init();
-  }, [accessToken, today]);
+  }, [isAuthenticated, today]);
 
   const handleMonthChange = useCallback(
     async (year: number, month: number) => {
-      if (!accessToken || !calendarId) return;
+      if (!isAuthenticated || !calendarId) return;
 
       setIsLoading(true);
       setError(null);
@@ -72,7 +71,6 @@ export default function HomeScreen() {
         const monthStart = new Date(year, month - 1, 1);
         const monthEnd = endOfMonth(monthStart);
         const fetchedEvents = await listEvents(
-          accessToken,
           calendarId,
           format(monthStart, 'yyyy-MM-dd'),
           format(monthEnd, 'yyyy-MM-dd')
@@ -85,7 +83,7 @@ export default function HomeScreen() {
         setIsLoading(false);
       }
     },
-    [accessToken, calendarId]
+    [isAuthenticated, calendarId]
   );
 
   const handleDayPress = useCallback((_date: string) => {

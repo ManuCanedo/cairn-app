@@ -5,9 +5,22 @@ import type {
   EventListResponse,
 } from '../types/calendar';
 import { useAuthStore } from '../store/auth';
+import { getValidAccessToken } from './token-refresh';
 
 const BASE_URL = 'https://www.googleapis.com/calendar/v3';
 const CAIRN_CALENDAR_NAME = 'Cairn';
+
+/**
+ * Gets a valid access token, attempting refresh if needed.
+ * Throws AuthExpiredError if no valid token is available.
+ */
+async function requireValidToken(): Promise<string> {
+  const token = await getValidAccessToken();
+  if (!token) {
+    throw new AuthExpiredError();
+  }
+  return token;
+}
 
 export class GoogleCalendarError extends Error {
   constructor(
@@ -74,10 +87,13 @@ function wrapError(error: unknown, context: string): never {
   throw new GoogleCalendarError(`${context}: ${message}`, 0);
 }
 
-/** Returns the Cairn calendar ID, creating it if necessary. */
-export async function getOrCreateCairnCalendar(
-  accessToken: string
-): Promise<string> {
+/**
+ * Returns the Cairn calendar ID, creating it if necessary.
+ * Automatically handles token refresh on native platforms.
+ */
+export async function getOrCreateCairnCalendar(): Promise<string> {
+  const accessToken = await requireValidToken();
+
   try {
     // First, list all calendars to check if Cairn exists
     const calendarList = await apiRequest<CalendarListResponse>(
@@ -85,26 +101,20 @@ export async function getOrCreateCairnCalendar(
       '/users/me/calendarList'
     );
 
-    const existingCalendar = calendarList.items.find(
-      (cal) => cal.summary === CAIRN_CALENDAR_NAME
-    );
+    const existingCalendar = calendarList.items.find((cal) => cal.summary === CAIRN_CALENDAR_NAME);
 
     if (existingCalendar) {
       return existingCalendar.id;
     }
 
     // Calendar doesn't exist, create it
-    const newCalendar = await apiRequest<Calendar>(
-      accessToken,
-      '/calendars',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          summary: CAIRN_CALENDAR_NAME,
-          description: 'Habit tracking calendar created by Cairn app',
-        }),
-      }
-    );
+    const newCalendar = await apiRequest<Calendar>(accessToken, '/calendars', {
+      method: 'POST',
+      body: JSON.stringify({
+        summary: CAIRN_CALENDAR_NAME,
+        description: 'Habit tracking calendar created by Cairn app',
+      }),
+    });
 
     return newCalendar.id;
   } catch (error) {
@@ -112,13 +122,17 @@ export async function getOrCreateCairnCalendar(
   }
 }
 
-/** Lists events from a calendar within a date range. */
+/**
+ * Lists events from a calendar within a date range.
+ * Automatically handles token refresh on native platforms.
+ */
 export async function listEvents(
-  accessToken: string,
   calendarId: string,
   timeMin: string,
   timeMax: string
 ): Promise<CalendarEvent[]> {
+  const accessToken = await requireValidToken();
+
   try {
     const params = new URLSearchParams({
       timeMin: new Date(timeMin).toISOString(),
@@ -138,14 +152,18 @@ export async function listEvents(
   }
 }
 
-/** Creates an all-day event in a calendar. */
+/**
+ * Creates an all-day event in a calendar.
+ * Automatically handles token refresh on native platforms.
+ */
 export async function createAllDayEvent(
-  accessToken: string,
   calendarId: string,
   summary: string,
   date: string,
   colorId: string
 ): Promise<CalendarEvent> {
+  const accessToken = await requireValidToken();
+
   try {
     const event = await apiRequest<CalendarEvent>(
       accessToken,
@@ -168,12 +186,13 @@ export async function createAllDayEvent(
   }
 }
 
-/** Deletes an event from a calendar. */
-export async function deleteEvent(
-  accessToken: string,
-  calendarId: string,
-  eventId: string
-): Promise<void> {
+/**
+ * Deletes an event from a calendar.
+ * Automatically handles token refresh on native platforms.
+ */
+export async function deleteEvent(calendarId: string, eventId: string): Promise<void> {
+  const accessToken = await requireValidToken();
+
   try {
     await apiRequest<void>(
       accessToken,
