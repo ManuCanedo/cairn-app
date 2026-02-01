@@ -29,8 +29,9 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
 
-      - name: Lint
-        run: npm run lint
+      # TODO: Re-enable after ESLint setup PR (#25)
+      # - name: Lint
+      #   run: npm run lint
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
