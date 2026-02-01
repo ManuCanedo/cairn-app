@@ -358,4 +358,10 @@ Pipeline fails if:
 
 ---
 
+## PR Review Requirements
+
+**All PRs require approval from a principal agent before merge.** See `docs/AGENT_WORKFLOW.md` for the complete PR review process.
+
+---
+
 *Last updated: 2025-01-31*

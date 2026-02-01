@@ -8,8 +8,10 @@ This file contains development tasks to be executed by Claude Code agents.
 3. **REQUIRED: Run code-simplifier agent review before testing**
 4. Run all checks: `npm run typecheck && npm test`
 5. Verify the acceptance criteria
-6. Mark the task as `[DONE]` and add notes if necessary
-7. If there are blockers, mark it as `[BLOCKED]` with explanation
+6. Create PR and **REQUIRED: Request principal-cpp-architect review**
+7. Address all `[AI-PRINCIPAL]` comments
+8. Get principal approval before merging
+9. Mark the task as `[DONE]` and add notes if necessary
 
 See `docs/AGENT_WORKFLOW.md` for the complete workflow.
 
@@ -43,6 +45,7 @@ Use this template for all new tasks. See `docs/AGENT_WORKFLOW.md` for the comple
 - [ ] code-simplifier review: DONE
 - [ ] TypeScript compiles: `npm run typecheck`
 - [ ] Tests pass: `npm test`
+- [ ] Principal review: APPROVED
 
 ### Rollback Plan
 If task fails: `git reset --hard pre-task-XXX`
