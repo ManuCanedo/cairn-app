@@ -1,6 +1,7 @@
 import { View, Text, Pressable, StyleSheet, Image, ActivityIndicator } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useAuthStore } from '../src/store/auth';
+import { useCalendarStore } from '../src/store/calendar';
 import { useGoogleAuth } from '../src/services/google-auth';
 import { MonthView } from '../src/components/Calendar';
 import ActivityPicker from '../src/components/ActivityPicker';
@@ -20,8 +21,8 @@ export default function HomeScreen() {
   const { user, isAuthenticated } = useAuthStore();
   const { signOut } = useGoogleAuth();
   const { showWarning, minutesRemaining } = useTokenWarning();
+  const { calendarId, setCalendarId, clearCalendarId } = useCalendarStore();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [calendarId, setCalendarId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPickerVisible, setIsPickerVisible] = useState(false);
@@ -49,6 +50,11 @@ export default function HomeScreen() {
     [today]
   );
 
+  const handleSignOut = useCallback(() => {
+    clearCalendarId();
+    signOut();
+  }, [clearCalendarId, signOut]);
+
   // Initialize calendar and load events for current month
   useEffect(() => {
     async function init() {
@@ -58,8 +64,12 @@ export default function HomeScreen() {
       setError(null);
 
       try {
-        const calId = await getOrCreateCairnCalendar();
-        setCalendarId(calId);
+        // Use persisted calendarId if available, otherwise fetch from API
+        let calId = calendarId;
+        if (!calId) {
+          calId = await getOrCreateCairnCalendar();
+          setCalendarId(calId);
+        }
 
         const monthStart = startOfMonth(today);
         const monthEnd = endOfMonth(today);
@@ -180,7 +190,11 @@ export default function HomeScreen() {
               >
                 <Text style={styles.headerButtonText}>Activities</Text>
               </Pressable>
-              <Pressable onPress={signOut} style={styles.headerButton} testID="sign-out-button">
+              <Pressable
+                onPress={handleSignOut}
+                style={styles.headerButton}
+                testID="sign-out-button"
+              >
                 <Text style={styles.headerButtonText}>Sign Out</Text>
               </Pressable>
             </View>
@@ -196,7 +210,7 @@ export default function HomeScreen() {
               ? 'Session expired. Please sign in again.'
               : `Session expires in ${minutesRemaining} minute${minutesRemaining === 1 ? '' : 's'}. Sign in again to continue.`}
           </Text>
-          <Pressable onPress={signOut} style={styles.warningButton}>
+          <Pressable onPress={handleSignOut} style={styles.warningButton}>
             <Text style={styles.warningButtonText}>Sign In</Text>
           </Pressable>
         </View>

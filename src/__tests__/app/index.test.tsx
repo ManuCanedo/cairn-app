@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useAuthStore } from '../../store/auth';
 import { useActivitiesStore } from '../../store/activities';
+import { useCalendarStore } from '../../store/calendar';
 import { useGoogleAuth } from '../../services/google-auth';
 import {
   getOrCreateCairnCalendar,
@@ -142,6 +143,7 @@ describe('HomeScreen', () => {
     });
 
     useActivitiesStore.setState({ templates: [] });
+    useCalendarStore.setState({ calendarId: null });
   });
 
   describe('rendering', () => {
@@ -342,6 +344,22 @@ describe('HomeScreen', () => {
       fireEvent.click(signOutButton);
 
       expect(mockSignOut).toHaveBeenCalledTimes(1);
+    });
+
+    it('clears calendarId when signing out', async () => {
+      // Set a calendarId before signing out
+      useCalendarStore.setState({ calendarId: 'test-calendar-id' });
+
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Sign Out')).toBeInTheDocument();
+      });
+
+      const signOutButton = screen.getByText('Sign Out');
+      fireEvent.click(signOutButton);
+
+      expect(useCalendarStore.getState().calendarId).toBeNull();
     });
   });
 
