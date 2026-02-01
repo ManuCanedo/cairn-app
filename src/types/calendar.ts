@@ -30,13 +30,13 @@ export interface CalendarEvent {
 
 /** Response from the calendar list API. */
 export interface CalendarListResponse {
-  readonly items: readonly CalendarListEntry[];
+  items: CalendarListEntry[];
   nextPageToken?: string;
 }
 
 /** Response from the events list API. */
 export interface EventListResponse {
-  readonly items: readonly CalendarEvent[];
+  items: CalendarEvent[];
   nextPageToken?: string;
 }
 

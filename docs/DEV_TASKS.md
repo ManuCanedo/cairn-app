@@ -11,7 +11,7 @@ Este archivo contiene tareas de desarrollo para ser ejecutadas por Claude Code.
 
 ---
 
-## Task 001: Fix Web Build Error [ACTIVE]
+## Task 001: Fix Web Build Error [DONE]
 
 ### Contexto
 La app no carga en web. Muestra pantalla blanca con error en consola:
@@ -40,19 +40,51 @@ Hacer que la app cargue correctamente en `http://localhost:8081` mostrando la pa
 6. Probar en Chrome y verificar que no hay errores en consola
 
 ### Criterios de aceptación
-- [ ] `npm run web` inicia sin errores
-- [ ] La app carga en `http://localhost:8081`
-- [ ] Se muestra la pantalla de login con el botón "Continue with Google"
-- [ ] No hay errores de JavaScript en la consola del navegador
+- [x] `npm run web` inicia sin errores
+- [x] La app carga en `http://localhost:8081`
+- [x] Se muestra la pantalla de login con el botón "Continue with Google"
+- [x] No hay errores de JavaScript en la consola del navegador
 
 ### Notas
 - Puede requerir downgrade de alguna dependencia
 - Verificar que `main` en package.json sea `expo-router/entry`
 - El proyecto usa Expo SDK 54
 
+### Solución aplicada (2025-01-31)
+El error "import.meta outside a module" es un problema conocido de Expo SDK 54 con Metro bundler cuando usa ES modules. Ver: https://github.com/expo/expo/issues/36384
+
+**Cambios realizados:**
+
+1. **metro.config.js** - Desactivar package exports para evitar el error de import.meta:
+   ```javascript
+   config.resolver.unstable_enablePackageExports = false;
+   ```
+
+2. **babel.config.js** - Crear archivo con transformación de import.meta:
+   ```javascript
+   module.exports = function (api) {
+     api.cache(true);
+     return {
+       presets: [
+         ['babel-preset-expo', { unstable_transformImportMeta: true }],
+       ],
+     };
+   };
+   ```
+
+3. **app.json** - Desactivar nueva arquitectura (incompatible con web):
+   ```json
+   "newArchEnabled": false
+   ```
+
+4. **app/_layout.tsx** - Corregir navegación prematura usando `useRootNavigationState()`:
+   - Añadir verificación de que la navegación está lista antes de llamar a `router.replace()`
+
+**Resultado:** La app bundlea correctamente y carga la pantalla de login en Chrome sin errores en consola.
+
 ---
 
-## Task 002: Test Google OAuth Flow [PENDING]
+## Task 002: Test Google OAuth Flow [DONE]
 
 ### Contexto
 Una vez que la app cargue en web, necesitamos verificar que el flujo de OAuth con Google funciona correctamente.
@@ -63,35 +95,42 @@ Completar un login exitoso con Google y ver la pantalla principal con los datos 
 ### Prerequisitos
 - Task 001 completada
 
-### Configuración OAuth ya existente
-- **Client ID**: `2006113013377-gn4n7u9b89v1g1i0aq0e8dbrmler57dt.apps.googleusercontent.com`
+### Configuración OAuth corregida
+- **Client ID**: `200611301377-gn4n7u9b89v1g1i0aq0e8dbrmler57dt.apps.googleusercontent.com`
 - **Usuario de prueba**: `manuel.ctabares@gmail.com`
-- **Redirect URI configurado**: `https://auth.expo.io/@manuel.canedo/cairn`
-
-### Pasos
-1. Abrir la app en `http://localhost:8081`
-2. Click en "Continue with Google"
-3. Seleccionar la cuenta de prueba
-4. Autorizar los permisos de Google Calendar
-5. Verificar redirect a pantalla principal
-6. Verificar que se muestra el nombre y foto del usuario
+- **Redirect URIs configurados**:
+  - `https://auth.expo.io/@manuel.canedo/cairn`
+  - `http://localhost:8081`
 
 ### Criterios de aceptación
-- [ ] El botón de Google abre la ventana de OAuth
-- [ ] Se puede autorizar con la cuenta de prueba
-- [ ] Después del login, se muestra la pantalla principal
-- [ ] El nombre del usuario aparece en la UI
-- [ ] El token se persiste (refrescar página mantiene sesión)
+- [x] El botón de Google abre la ventana de OAuth
+- [x] Se puede autorizar con la cuenta de prueba
+- [x] Después del login, se muestra la pantalla principal
+- [x] El nombre del usuario aparece en la UI
+- [x] El token se persiste (refrescar página mantiene sesión)
 
-### Debugging
-Si el OAuth falla, verificar:
-- Que el Client ID en `src/config/constants.ts` es correcto
-- Que el redirect URI coincide con el configurado en Google Cloud Console
-- Que el usuario está añadido como tester en la pantalla de consentimiento OAuth
+### Problemas encontrados y solucionados (2025-01-31)
+
+**1. Error "invalid_client" (Error 401)**
+- **Causa**: Typo en el Client ID - había un "3" extra
+- **Antes**: `2006113013377-...` (13 dígitos)
+- **Después**: `200611301377-...` (12 dígitos)
+- **Fix**: Corregido en `src/config/constants.ts`
+
+**2. Error "redirect_uri_mismatch" (Error 400)**
+- **Causa**: Solo estaba configurado el redirect de Expo proxy
+- **Fix**: Añadir `http://localhost:8081` en Google Cloud Console > OAuth Client > URIs de redireccionamiento autorizados
+
+**3. Error "Access blocked: app has not completed verification"**
+- **Causa**: El usuario de prueba no estaba añadido en la pantalla de consentimiento OAuth
+- **Fix**: Google Cloud Console > Google Auth Platform > Público > Usuarios de prueba > Agregar `manuel.ctabares@gmail.com`
+
+### Resultado
+✅ Login con Google funciona correctamente. La app muestra "Hello, Manuel!" con la foto de perfil del usuario.
 
 ---
 
-## Task 003: Implement Google Calendar Service [PENDING]
+## Task 003: Implement Google Calendar Service [DONE]
 
 ### Contexto
 Necesitamos un servicio que interactúe con la Google Calendar API para:
@@ -171,13 +210,13 @@ async function deleteEvent(
 - Crear: `src/types/calendar.ts` (tipos TypeScript)
 
 ### Criterios de aceptación
-- [ ] El servicio se exporta correctamente
-- [ ] `getOrCreateCairnCalendar` crea el calendario si no existe
-- [ ] `getOrCreateCairnCalendar` retorna el ID si ya existe
-- [ ] `listEvents` retorna eventos del rango especificado
-- [ ] `createAllDayEvent` crea eventos correctamente
-- [ ] Los errores de API se manejan con try/catch
-- [ ] TypeScript compila sin errores
+- [x] El servicio se exporta correctamente
+- [x] `getOrCreateCairnCalendar` crea el calendario si no existe
+- [x] `getOrCreateCairnCalendar` retorna el ID si ya existe
+- [x] `listEvents` retorna eventos del rango especificado
+- [x] `createAllDayEvent` crea eventos correctamente
+- [x] Los errores de API se manejan con try/catch
+- [x] TypeScript compila sin errores
 
 ### Testing manual
 Después de implementar, probar en la consola del navegador:
@@ -188,9 +227,31 @@ const calId = await getOrCreateCairnCalendar(accessToken);
 console.log('Calendar ID:', calId);
 ```
 
+### Implementación (2025-01-31)
+
+**Archivos creados:**
+
+1. **src/types/calendar.ts** - Tipos TypeScript:
+   - `CalendarListEntry` - Entrada de lista de calendarios
+   - `CalendarEvent` - Evento con soporte para all-day (date) y timed (dateTime)
+   - `CalendarListResponse` / `EventListResponse` - Respuestas paginadas de la API
+   - `Calendar` - Datos del calendario
+
+2. **src/services/google-calendar.ts** - Servicio con 4 funciones:
+   - `getOrCreateCairnCalendar(accessToken)` - Busca calendario "Cairn" en la lista, lo crea si no existe
+   - `listEvents(accessToken, calendarId, timeMin, timeMax)` - Lista eventos ordenados por fecha
+   - `createAllDayEvent(accessToken, calendarId, summary, date, colorId)` - Crea evento all-day con descripción "Logged via Cairn"
+   - `deleteEvent(accessToken, calendarId, eventId)` - Elimina evento (maneja 204 No Content)
+
+**Características:**
+- Helper `apiRequest<T>` centralizado para todas las llamadas
+- Clase `GoogleCalendarError` con statusCode y details para debugging
+- URL encoding correcto para calendarId y eventId
+- Manejo de respuesta 204 No Content para DELETE
+
 ---
 
-## Task 004: Create Calendar UI Component [PENDING]
+## Task 004: Create Calendar UI Component [DONE]
 
 ### Contexto
 La pantalla principal debe mostrar un calendario mensual donde cada día muestre indicadores de color según las actividades realizadas.
@@ -249,12 +310,36 @@ interface MonthViewProps {
 5. Mostrar hasta 3 puntos de color por día (si hay más, mostrar "+")
 
 ### Criterios de aceptación
-- [ ] El calendario muestra el mes actual correctamente
-- [ ] Las flechas ← → cambian de mes
-- [ ] El día actual está visualmente destacado
-- [ ] Los eventos se muestran como puntos de colores
-- [ ] El componente es responsive
-- [ ] No hay warnings en consola
+- [x] El calendario muestra el mes actual correctamente
+- [x] Las flechas ← → cambian de mes
+- [x] El día actual está visualmente destacado
+- [x] Los eventos se muestran como puntos de colores
+- [x] El componente es responsive
+- [x] No hay warnings en consola
+
+### Implementación (2025-01-31)
+
+**Dependencias instaladas:**
+- `date-fns` para manipulación de fechas
+
+**Archivos creados:**
+1. `src/components/Calendar/colors.ts` - Mapeo de colorId de Google Calendar a hex
+2. `src/components/Calendar/CalendarHeader.tsx` - Header con navegación prev/next mes
+3. `src/components/Calendar/DayCell.tsx` - Celda individual con día + puntos de colores
+4. `src/components/Calendar/MonthView.tsx` - Componente principal con grid 7 columnas
+5. `src/components/Calendar/index.ts` - Barrel export
+
+**Archivos modificados:**
+- `app/index.tsx` - Integrado calendario real con carga de eventos desde Google Calendar
+
+**Características:**
+- Grid flexbox de 7 columnas (Mon-Sun)
+- Día actual destacado con círculo púrpura
+- Días de otros meses en gris claro
+- Puntos de colores (máx 3, luego "+") para eventos
+- Navegación entre meses con flechas
+- Carga automática de eventos al cambiar mes
+- Estado de loading y error handling con retry
 
 ---
 
@@ -434,4 +519,44 @@ App funcional end-to-end con UX pulida.
 
 ## Completed Tasks
 
-_Ninguna tarea completada aún_
+### Task 001: Fix Web Build Error ✅
+- **Fecha:** 2025-01-31
+- **Problema:** Error "import.meta outside a module" en Metro bundler
+- **Solución:**
+  - Desactivar package exports en metro.config.js
+  - Crear babel.config.js con transformación de import.meta
+  - Desactivar nueva arquitectura en app.json
+  - Fix de navegación prematura en _layout.tsx
+
+### Task 002: Test Google OAuth Flow ✅
+- **Fecha:** 2025-01-31
+- **Problemas encontrados:**
+  1. Typo en Client ID (dígito extra)
+  2. Redirect URI faltante para localhost
+  3. Usuario de prueba no añadido en OAuth consent screen
+- **Resultado:** Login exitoso con Google, usuario autenticado correctamente
+
+### Task 003: Implement Google Calendar Service ✅
+- **Fecha:** 2025-01-31
+- **Archivos creados:**
+  - `src/types/calendar.ts` - Tipos TypeScript para Calendar API
+  - `src/services/google-calendar.ts` - Servicio con 4 funciones CRUD
+- **Funciones implementadas:**
+  - `getOrCreateCairnCalendar()` - Busca o crea calendario "Cairn"
+  - `listEvents()` - Lista eventos de un rango de fechas
+  - `createAllDayEvent()` - Crea evento all-day con colorId
+  - `deleteEvent()` - Elimina evento
+- **Resultado:** TypeScript compila sin errores, servicio listo para usar
+
+### Task 004: Create Calendar UI Component ✅
+- **Fecha:** 2025-01-31
+- **Dependencias:** date-fns instalado
+- **Archivos creados:**
+  - `src/components/Calendar/colors.ts` - Mapeo colorId Google → hex
+  - `src/components/Calendar/CalendarHeader.tsx` - Header con navegación
+  - `src/components/Calendar/DayCell.tsx` - Celda individual + puntos de colores
+  - `src/components/Calendar/MonthView.tsx` - Calendario mensual completo
+  - `src/components/Calendar/index.ts` - Barrel export
+- **Integración:**
+  - `app/index.tsx` actualizado con calendario real + fetch de eventos
+- **Resultado:** Calendario funcional con navegación, día actual destacado, eventos como puntos de colores

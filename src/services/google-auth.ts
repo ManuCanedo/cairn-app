@@ -13,7 +13,7 @@ export function useGoogleAuth() {
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: GOOGLE_CLIENT_ID,
-    scopes: GOOGLE_SCOPES,
+    scopes: [...GOOGLE_SCOPES],
   });
 
   useEffect(() => {

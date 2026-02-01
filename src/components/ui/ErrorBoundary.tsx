@@ -42,7 +42,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <Text style={styles.emoji}>:(</Text>
         <Text style={styles.title}>Something went wrong</Text>
         <Text style={styles.message}>
-          {this.state.error?.message ?? 'An unexpected error occurred'}
+          {this.state.error?.message || 'An unexpected error occurred'}
         </Text>
         <Pressable onPress={this.handleRetry} style={styles.button}>
           <Text style={styles.buttonText}>Try Again</Text>
