@@ -46,39 +46,69 @@ Follow the Red/Green/Refactor methodology. See `docs/DEVELOPMENT.md` for detaile
 - Acceptance criteria are ambiguous
 - Scope is expanding beyond the original task (more than 5 files affected)
 
-## Code Review with code-simplifier
+## Pre-Commit Review Process
 
-**REQUIRED: Before testing and committing, invoke the code-simplifier agent.**
+**REQUIRED: Before committing, two review stages must be completed in order.**
 
-This step is mandatory for all changes. The code-simplifier agent will:
+### Stage 1: code-simplifier Review
 
-1. Review code for clarity and maintainability
-2. Identify unnecessary complexity
-3. Ensure consistency with existing patterns
-4. Suggest simplifications while preserving functionality
-
-### How to Invoke
-
-Invoke using the `/code-simplifier` command or Task tool:
-
-```
-/code-simplifier Review the changes made in this task. Files modified: [list files]
-```
-
-Or explicitly:
+Invoke the code-simplifier agent to polish the implementation:
 
 ```
 Task(subagent_type="code-simplifier", prompt="Review changes in: src/path/file.ts")
 ```
 
-### What to Expect
-
 The code-simplifier will:
-- Analyze modified files
-- Propose improvements (if any)
+
+- Analyze modified files for clarity and maintainability
+- Identify unnecessary complexity
+- Ensure consistency with existing patterns
 - Implement approved simplifications
 
-**Only proceed to testing after code-simplifier review is complete.**
+### Stage 2: Principal Architect Review
+
+**After code-simplifier review, invoke the principal agent to review the entire feature.**
+
+The principal review assesses:
+
+1. **Direction**: Is this the right approach for the problem?
+2. **Process compliance**: Was TDD followed? code-simplifier review done?
+3. **Quality**: Is the implementation clean and maintainable?
+4. **Scope**: Are there any unnecessary changes or scope creep?
+5. **New issues**: Should anything be logged to the backlog?
+
+```
+Task(subagent_type="principal-cpp-architect", prompt="
+Review the complete feature implementation for [TASK NAME].
+
+Files changed: [list files]
+
+Verify:
+1. Implementation direction is sound
+2. TDD and code-simplifier protocols were followed
+3. No scope creep or unnecessary modifications
+4. Quality meets standards
+
+If rejecting, provide specific actionable feedback.
+")
+```
+
+### Handling Principal Feedback
+
+When the principal rejects:
+
+1. **Read feedback carefully** - understand the specific concerns
+2. **Iterate on implementation** - address the feedback
+3. **Re-run code-simplifier** if changes are significant
+4. **Request re-review** from principal
+
+When you disagree with feedback:
+
+1. **Provide evidence** - code citations, test results, documentation
+2. **Explain reasoning** - why your approach is valid
+3. **Request reconsideration** - ask principal to re-evaluate with new context
+
+**Only when the principal approves (or concedes after evidence-based discussion) may you proceed to commit.**
 
 ## Verifying Completion
 
@@ -115,6 +145,7 @@ type(scope): short description
 - npm run typecheck: PASS
 - npm test: PASS
 - code-simplifier review: DONE
+- principal review: APPROVED
 
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 ```
@@ -131,105 +162,23 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 
 ## Creating Pull Request
 
+After principal approval, create and merge the PR:
+
 ```bash
 git push -u origin feature/task-XXX
 gh pr create --title "feat: task XXX description" --body "..."
+gh pr merge --squash
 ```
 
-## PR Review Process (REQUIRED)
-
-**All PRs require approval from a principal agent before merge.**
-
-### Who Can Review
-
-Only **principal-cpp-architect** agents can review and approve PRs. The principal agent acts as an adversarial reviewer to ensure quality.
-
-> **Note:** `principal-cpp-architect` is a general-purpose adversarial reviewer agent available in Claude Code, used across all project types regardless of language.
-
-### Principal Review Checklist
-
-The principal agent MUST verify:
-
-1. **Need for changes**: Does this change address a documented task, bug report, or explicit user request? Reject speculative or undocumented changes.
-2. **Implementation quality**: Is the code clean, maintainable, and follows best practices?
-3. **Protocol compliance**:
-   - [ ] TDD was followed (tests written first)
-   - [ ] code-simplifier review was completed
-   - [ ] Acceptance criteria are met
-   - [ ] No unnecessary changes or scope creep
-4. **No regressions**: Do all tests pass? Is coverage maintained?
-
-### Comment Format
-
-Principal agents MUST prefix all review comments with:
-
-```
-[AI-PRINCIPAL] Your comment here
-```
-
-Example:
-```
-[AI-PRINCIPAL] This function has too many responsibilities. Consider extracting
-the validation logic into a separate helper to improve testability.
-```
-
-### Addressing Review Comments
-
-For each principal comment, the developer MUST either:
-
-1. **Implement the suggestion**: Make the requested change and reply with what was done
-2. **Clarify and request re-review**: If you disagree, explain your reasoning clearly and ask the principal to reconsider
-
-**Do NOT ignore comments or mark them as resolved without action.**
-
-### Review Cycle
-
-```
-Developer creates PR
-       ↓
-Request review: Task(subagent_type="principal-cpp-architect", prompt="Review PR #XX adversarially...")
-       ↓
-Principal leaves [AI-PRINCIPAL] comments
-       ↓
-Developer addresses ALL comments
-       ↓
-Developer requests re-review
-       ↓
-Principal approves (or requests more changes)
-       ↓
-Merge (1 approval required)
-```
-
-### How to Request Principal Review
-
-```
-Task(subagent_type="principal-cpp-architect", prompt="
-Adversarially review PR #XX at https://github.com/OWNER/REPO/pull/XX
-
-Verify:
-1. The changes are actually needed
-2. Implementation quality is high
-3. TDD and code-simplifier protocols were followed
-4. No scope creep or unnecessary modifications
-
-Leave [AI-PRINCIPAL] prefixed comments on the PR for any concerns.
-Approve only if all criteria are met.
-")
-```
+Since the principal review already happened pre-commit, PRs can be merged directly after creation (no additional review cycle needed).
 
 ### Human Override
 
-Human reviewers can override principal decisions when:
-- The principal and developer reach an impasse after 2 review cycles
-- The change is time-sensitive and meets basic quality standards
-- Domain expertise not captured by the principal is required
+Human reviewers can always:
 
-To request human review, add the `needs-human-review` label to the PR.
-
-Humans can always:
 - Override principal decisions
-- Approve PRs directly
-- Request additional changes
+- Request additional changes before merge
+- Add the `needs-human-review` label if they want to be consulted
 
 ## Complete Workflow Checklist
 
@@ -240,16 +189,14 @@ Humans can always:
 [ ] 4. Write failing test (RED)
 [ ] 5. Implement minimal code (GREEN)
 [ ] 6. Refactor if needed
-[ ] 7. **Run code-simplifier agent review** <-- REQUIRED
-[ ] 8. Apply any simplifications
-[ ] 9. Run all checks (typecheck, test, lint)
-[ ] 10. Verify acceptance criteria
-[ ] 11. Commit with proper message
-[ ] 12. Push and create PR
-[ ] 13. **Request principal-cpp-architect review** <-- REQUIRED
-[ ] 14. Address all [AI-PRINCIPAL] comments
-[ ] 15. Get principal approval
-[ ] 16. Merge
+[ ] 7. Run all checks (typecheck, test, lint)
+[ ] 8. Verify acceptance criteria
+[ ] 9. **Run code-simplifier agent review** <-- REQUIRED
+[ ] 10. Apply any simplifications
+[ ] 11. **Run principal-cpp-architect review** <-- REQUIRED (pre-commit)
+[ ] 12. Address feedback and iterate until approved
+[ ] 13. Commit with proper message (include "principal review: APPROVED")
+[ ] 14. Push, create PR, and merge
 ```
 
 ## Recovery from Mistakes

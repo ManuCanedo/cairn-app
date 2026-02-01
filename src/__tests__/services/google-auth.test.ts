@@ -1,11 +1,14 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { useGoogleAuth } from '../../services/google-auth';
 import { useAuthStore } from '../../store/auth';
+import * as tokenStorage from '../../services/token-storage';
 
 jest.mock('expo-auth-session/providers/google');
 jest.mock('expo-web-browser');
+jest.mock('../../services/token-storage');
 
 const mockUseAuthRequest = Google.useAuthRequest as jest.Mock;
 const mockMaybeCompleteAuthSession = WebBrowser.maybeCompleteAuthSession as jest.Mock;
@@ -114,6 +117,35 @@ describe('google-auth service', () => {
     });
   });
 
+  describe('native platform configuration', () => {
+    it('includes accessType offline on native platforms', () => {
+      // Change platform to iOS
+      Platform.OS = 'ios';
+
+      renderHook(() => useGoogleAuth());
+
+      // Verify useAuthRequest was called with accessType: 'offline'
+      expect(mockUseAuthRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          accessType: 'offline',
+        })
+      );
+
+      // Reset platform
+      Platform.OS = 'web';
+    });
+
+    it('does not include accessType on web', () => {
+      Platform.OS = 'web';
+
+      renderHook(() => useGoogleAuth());
+
+      // Verify useAuthRequest was NOT called with accessType
+      const callArgs = mockUseAuthRequest.mock.calls[0][0];
+      expect(callArgs.accessType).toBeUndefined();
+    });
+  });
+
   describe('signOut', () => {
     it('calls logout on auth store', () => {
       // Set up authenticated state
@@ -130,6 +162,21 @@ describe('google-auth service', () => {
 
       expect(useAuthStore.getState().accessToken).toBeNull();
       expect(useAuthStore.getState().isAuthenticated).toBe(false);
+    });
+
+    it('clears refresh token from SecureStore', () => {
+      useAuthStore.setState({
+        accessToken: 'test-token',
+        isAuthenticated: true,
+      });
+
+      const { result } = renderHook(() => useGoogleAuth());
+
+      act(() => {
+        result.current.signOut();
+      });
+
+      expect(tokenStorage.deleteRefreshToken).toHaveBeenCalled();
     });
   });
 
@@ -163,7 +210,9 @@ describe('google-auth service', () => {
 
       await waitFor(() => {
         expect(useAuthStore.getState().accessToken).toBe('new-access-token');
-        expect(useAuthStore.getState().refreshToken).toBe('new-refresh-token');
+        // Refresh token is stored in SecureStore, not in auth state
+        expect(useAuthStore.getState().refreshToken).toBeNull();
+        expect(tokenStorage.storeRefreshToken).toHaveBeenCalledWith('new-refresh-token');
         expect(useAuthStore.getState().isAuthenticated).toBe(true);
         expect(useAuthStore.getState().user).toEqual(mockUserInfo);
       });
@@ -220,6 +269,8 @@ describe('google-auth service', () => {
 
       await waitFor(() => {
         expect(useAuthStore.getState().refreshToken).toBeNull();
+        // Should not call storeRefreshToken when no refresh token provided
+        expect(tokenStorage.storeRefreshToken).not.toHaveBeenCalled();
       });
     });
 
@@ -314,12 +365,9 @@ describe('google-auth service', () => {
       renderHook(() => useGoogleAuth());
 
       await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalledWith(
-          'https://www.googleapis.com/oauth2/v2/userinfo',
-          {
-            headers: { Authorization: 'Bearer fetch-test-token' },
-          }
-        );
+        expect(mockFetch).toHaveBeenCalledWith('https://www.googleapis.com/oauth2/v2/userinfo', {
+          headers: { Authorization: 'Bearer fetch-test-token' },
+        });
       });
     });
 
@@ -345,10 +393,7 @@ describe('google-auth service', () => {
         expect(useAuthStore.getState().user).toBeNull();
       });
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Error fetching user info:',
-        expect.any(Error)
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('Error fetching user info:', expect.any(Error));
       consoleSpy.mockRestore();
     });
   });

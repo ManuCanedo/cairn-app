@@ -3,6 +3,7 @@ import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-rout
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '../src/store/auth';
 import { ErrorBoundary } from '../src/components/ui/ErrorBoundary';
+import { useAppForeground } from '../src/hooks/useAppForeground';
 
 function RootLayoutNav() {
   const { isAuthenticated } = useAuthStore();
@@ -10,6 +11,9 @@ function RootLayoutNav() {
   const router = useRouter();
   const navigationState = useRootNavigationState();
   const [isNavigationReady, setIsNavigationReady] = useState(false);
+
+  // Check token validity when app comes to foreground
+  useAppForeground();
 
   useEffect(() => {
     // Wait for navigation to be ready

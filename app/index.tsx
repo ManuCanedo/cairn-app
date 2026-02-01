@@ -4,13 +4,15 @@ import { useAuthStore } from '../src/store/auth';
 import { useGoogleAuth } from '../src/services/google-auth';
 import { MonthView } from '../src/components/Calendar';
 import { getOrCreateCairnCalendar, listEvents } from '../src/services/google-calendar';
+import { useTokenWarning } from '../src/hooks/useTokenWarning';
 import type { CalendarEvent } from '../src/types/calendar';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 
 export default function HomeScreen() {
-  const { user, accessToken } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const { signOut } = useGoogleAuth();
+  const { showWarning, minutesRemaining } = useTokenWarning();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [calendarId, setCalendarId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,19 +32,18 @@ export default function HomeScreen() {
   // Initialize calendar and load events for current month
   useEffect(() => {
     async function init() {
-      if (!accessToken) return;
+      if (!isAuthenticated) return;
 
       setIsLoading(true);
       setError(null);
 
       try {
-        const calId = await getOrCreateCairnCalendar(accessToken);
+        const calId = await getOrCreateCairnCalendar();
         setCalendarId(calId);
 
         const monthStart = startOfMonth(today);
         const monthEnd = endOfMonth(today);
         const fetchedEvents = await listEvents(
-          accessToken,
           calId,
           format(monthStart, 'yyyy-MM-dd'),
           format(monthEnd, 'yyyy-MM-dd')
@@ -57,35 +58,36 @@ export default function HomeScreen() {
     }
 
     init();
-  }, [accessToken, today]);
+  }, [isAuthenticated, today]);
 
-  const handleMonthChange = useCallback(async (year: number, month: number) => {
-    if (!accessToken || !calendarId) return;
+  const handleMonthChange = useCallback(
+    async (year: number, month: number) => {
+      if (!isAuthenticated || !calendarId) return;
 
-    setIsLoading(true);
-    setError(null);
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      const monthStart = new Date(year, month - 1, 1);
-      const monthEnd = endOfMonth(monthStart);
-      const fetchedEvents = await listEvents(
-        accessToken,
-        calendarId,
-        format(monthStart, 'yyyy-MM-dd'),
-        format(monthEnd, 'yyyy-MM-dd')
-      );
-      setEvents(fetchedEvents);
-    } catch (err) {
-      console.error('Failed to load events:', err);
-      setError('Failed to load events');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [accessToken, calendarId]);
+      try {
+        const monthStart = new Date(year, month - 1, 1);
+        const monthEnd = endOfMonth(monthStart);
+        const fetchedEvents = await listEvents(
+          calendarId,
+          format(monthStart, 'yyyy-MM-dd'),
+          format(monthEnd, 'yyyy-MM-dd')
+        );
+        setEvents(fetchedEvents);
+      } catch (err) {
+        console.error('Failed to load events:', err);
+        setError('Failed to load events');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [isAuthenticated, calendarId]
+  );
 
-  const handleDayPress = useCallback((date: string) => {
-    console.log('Day pressed:', date);
-    // Will be used in Task 006 for activity registration
+  const handleDayPress = useCallback((_date: string) => {
+    // TODO: Task 006 - Activity registration on day press
   }, []);
 
   return (
@@ -94,20 +96,34 @@ export default function HomeScreen() {
         options={{
           title: 'Cairn',
           headerRight: () => (
-            <Pressable onPress={signOut} style={styles.headerButton}>
+            <Pressable onPress={signOut} style={styles.headerButton} testID="sign-out-button">
               <Text style={styles.headerButtonText}>Sign Out</Text>
             </Pressable>
           ),
         }}
       />
 
+      {/* Session Expiry Warning (web only) */}
+      {showWarning && (
+        <View style={styles.warningBanner} testID="session-warning">
+          <Text style={styles.warningText}>
+            {minutesRemaining === 0
+              ? 'Session expired. Please sign in again.'
+              : `Session expires in ${minutesRemaining} minute${minutesRemaining === 1 ? '' : 's'}. Sign in again to continue.`}
+          </Text>
+          <Pressable onPress={signOut} style={styles.warningButton}>
+            <Text style={styles.warningButtonText}>Sign In</Text>
+          </Pressable>
+        </View>
+      )}
+
       {/* User Info */}
       <View style={styles.userSection}>
-        {user?.picture && (
-          <Image source={{ uri: user.picture }} style={styles.avatar} />
-        )}
+        {user?.picture && <Image source={{ uri: user.picture }} style={styles.avatar} />}
         <View>
-          <Text style={styles.greeting}>Hello, {user?.name?.split(' ')[0] ?? 'there'}!</Text>
+          <Text style={styles.greeting} testID="greeting">
+            Hello, {user?.name?.split(' ')[0] ?? 'there'}!
+          </Text>
           <Text style={styles.date}>{formattedDate}</Text>
         </View>
       </View>
@@ -115,8 +131,8 @@ export default function HomeScreen() {
       {/* Calendar */}
       <View style={styles.calendarSection}>
         {isLoading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="small" color="#4F46E5" />
+          <View style={styles.loadingOverlay} testID="loading-overlay">
+            <ActivityIndicator size="small" color="#4F46E5" testID="loading-indicator" />
           </View>
         )}
         {error ? (
@@ -232,5 +248,31 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '500',
     marginTop: -2,
+  },
+  warningBanner: {
+    backgroundColor: '#FEF3C7',
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#FCD34D',
+  },
+  warningText: {
+    color: '#92400E',
+    fontSize: 14,
+    flex: 1,
+    marginRight: 12,
+  },
+  warningButton: {
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  warningButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

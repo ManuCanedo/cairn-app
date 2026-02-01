@@ -7,13 +7,19 @@ import {
   deleteEvent,
 } from '../../services/google-calendar';
 import { useAuthStore } from '../../store/auth';
+import * as tokenRefresh from '../../services/token-refresh';
+
+jest.mock('../../services/token-refresh');
 
 describe('google-calendar service', () => {
   const mockFetch = global.fetch as jest.Mock;
   const mockLogout = jest.fn();
+  const mockGetValidAccessToken = tokenRefresh.getValidAccessToken as jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Mock getValidAccessToken to return test token by default
+    mockGetValidAccessToken.mockResolvedValue('test-token');
     // Reset auth store and mock logout
     useAuthStore.setState({
       accessToken: 'test-token',
@@ -76,9 +82,10 @@ describe('google-calendar service', () => {
           }),
       });
 
-      const calendarId = await getOrCreateCairnCalendar('test-token');
+      const calendarId = await getOrCreateCairnCalendar();
 
       expect(calendarId).toBe('cal-123');
+      expect(mockGetValidAccessToken).toHaveBeenCalled();
       expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(mockFetch).toHaveBeenCalledWith(
         'https://www.googleapis.com/calendar/v3/users/me/calendarList',
@@ -112,7 +119,7 @@ describe('google-calendar service', () => {
           }),
       });
 
-      const calendarId = await getOrCreateCairnCalendar('test-token');
+      const calendarId = await getOrCreateCairnCalendar();
 
       expect(calendarId).toBe('new-cairn-cal');
       expect(mockFetch).toHaveBeenCalledTimes(2);
@@ -141,9 +148,15 @@ describe('google-calendar service', () => {
           json: () => Promise.resolve({ id: 'new-cal', summary: 'Cairn' }),
         });
 
-      const calendarId = await getOrCreateCairnCalendar('test-token');
+      const calendarId = await getOrCreateCairnCalendar();
 
       expect(calendarId).toBe('new-cal');
+    });
+
+    it('throws AuthExpiredError when no valid token available', async () => {
+      mockGetValidAccessToken.mockResolvedValueOnce(null);
+
+      await expect(getOrCreateCairnCalendar()).rejects.toThrow(AuthExpiredError);
     });
 
     it('throws AuthExpiredError and logs out on 401', async () => {
@@ -154,9 +167,7 @@ describe('google-calendar service', () => {
         json: () => Promise.resolve({ error: { message: 'Invalid token' } }),
       });
 
-      await expect(getOrCreateCairnCalendar('expired-token')).rejects.toThrow(
-        AuthExpiredError
-      );
+      await expect(getOrCreateCairnCalendar()).rejects.toThrow(AuthExpiredError);
       expect(mockLogout).toHaveBeenCalled();
     });
 
@@ -168,15 +179,13 @@ describe('google-calendar service', () => {
         json: () => Promise.resolve({ error: { message: 'Access denied' } }),
       });
 
-      await expect(getOrCreateCairnCalendar('test-token')).rejects.toThrow(
-        GoogleCalendarError
-      );
+      await expect(getOrCreateCairnCalendar()).rejects.toThrow(GoogleCalendarError);
     });
 
     it('wraps network errors', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(getOrCreateCairnCalendar('test-token')).rejects.toThrow(
+      await expect(getOrCreateCairnCalendar()).rejects.toThrow(
         'Failed to get or create Cairn calendar: Network error'
       );
     });
@@ -184,7 +193,7 @@ describe('google-calendar service', () => {
     it('wraps non-Error thrown values', async () => {
       mockFetch.mockRejectedValueOnce('string error');
 
-      await expect(getOrCreateCairnCalendar('test-token')).rejects.toThrow(
+      await expect(getOrCreateCairnCalendar()).rejects.toThrow(
         'Failed to get or create Cairn calendar: Unknown error'
       );
     });
@@ -203,14 +212,10 @@ describe('google-calendar service', () => {
         json: () => Promise.resolve({ items: mockEvents }),
       });
 
-      const events = await listEvents(
-        'test-token',
-        'calendar-id',
-        '2026-01-01',
-        '2026-01-31'
-      );
+      const events = await listEvents('calendar-id', '2026-01-01', '2026-01-31');
 
       expect(events).toEqual(mockEvents);
+      expect(mockGetValidAccessToken).toHaveBeenCalled();
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/calendars/calendar-id/events'),
         expect.any(Object)
@@ -224,12 +229,7 @@ describe('google-calendar service', () => {
         json: () => Promise.resolve({}),
       });
 
-      const events = await listEvents(
-        'test-token',
-        'calendar-id',
-        '2026-01-01',
-        '2026-01-31'
-      );
+      const events = await listEvents('calendar-id', '2026-01-01', '2026-01-31');
 
       expect(events).toEqual([]);
     });
@@ -241,12 +241,7 @@ describe('google-calendar service', () => {
         json: () => Promise.resolve({ items: [] }),
       });
 
-      await listEvents(
-        'test-token',
-        'user@example.com',
-        '2026-01-01',
-        '2026-01-31'
-      );
+      await listEvents('user@example.com', '2026-01-01', '2026-01-31');
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/calendars/user%40example.com/events'),
@@ -261,18 +256,21 @@ describe('google-calendar service', () => {
         json: () => Promise.resolve({ items: [] }),
       });
 
-      await listEvents(
-        'test-token',
-        'calendar-id',
-        '2026-01-01',
-        '2026-01-31'
-      );
+      await listEvents('calendar-id', '2026-01-01', '2026-01-31');
 
       const calledUrl = mockFetch.mock.calls[0][0];
       expect(calledUrl).toContain('singleEvents=true');
       expect(calledUrl).toContain('orderBy=startTime');
       expect(calledUrl).toContain('timeMin=');
       expect(calledUrl).toContain('timeMax=');
+    });
+
+    it('throws AuthExpiredError when no valid token available', async () => {
+      mockGetValidAccessToken.mockResolvedValueOnce(null);
+
+      await expect(listEvents('calendar-id', '2026-01-01', '2026-01-31')).rejects.toThrow(
+        AuthExpiredError
+      );
     });
 
     it('throws AuthExpiredError and logs out on 401', async () => {
@@ -283,9 +281,9 @@ describe('google-calendar service', () => {
         json: () => Promise.resolve({}),
       });
 
-      await expect(
-        listEvents('expired-token', 'calendar-id', '2026-01-01', '2026-01-31')
-      ).rejects.toThrow(AuthExpiredError);
+      await expect(listEvents('calendar-id', '2026-01-01', '2026-01-31')).rejects.toThrow(
+        AuthExpiredError
+      );
       expect(mockLogout).toHaveBeenCalled();
     });
 
@@ -297,17 +295,17 @@ describe('google-calendar service', () => {
         json: () => Promise.resolve({}),
       });
 
-      await expect(
-        listEvents('test-token', 'calendar-id', '2026-01-01', '2026-01-31')
-      ).rejects.toThrow(GoogleCalendarError);
+      await expect(listEvents('calendar-id', '2026-01-01', '2026-01-31')).rejects.toThrow(
+        GoogleCalendarError
+      );
     });
 
     it('wraps network errors', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Connection failed'));
 
-      await expect(
-        listEvents('test-token', 'calendar-id', '2026-01-01', '2026-01-31')
-      ).rejects.toThrow('Failed to list events: Connection failed');
+      await expect(listEvents('calendar-id', '2026-01-01', '2026-01-31')).rejects.toThrow(
+        'Failed to list events: Connection failed'
+      );
     });
   });
 
@@ -327,15 +325,10 @@ describe('google-calendar service', () => {
         json: () => Promise.resolve(mockEvent),
       });
 
-      const event = await createAllDayEvent(
-        'test-token',
-        'calendar-id',
-        'Workout',
-        '2026-01-15',
-        '1'
-      );
+      const event = await createAllDayEvent('calendar-id', 'Workout', '2026-01-15', '1');
 
       expect(event).toEqual(mockEvent);
+      expect(mockGetValidAccessToken).toHaveBeenCalled();
       expect(mockFetch).toHaveBeenCalledWith(
         'https://www.googleapis.com/calendar/v3/calendars/calendar-id/events',
         expect.objectContaining({
@@ -358,17 +351,19 @@ describe('google-calendar service', () => {
         json: () => Promise.resolve({ id: 'evt' }),
       });
 
-      await createAllDayEvent(
-        'test-token',
-        'user@example.com',
-        'Test',
-        '2026-01-15',
-        '1'
-      );
+      await createAllDayEvent('user@example.com', 'Test', '2026-01-15', '1');
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/calendars/user%40example.com/events'),
         expect.any(Object)
+      );
+    });
+
+    it('throws AuthExpiredError when no valid token available', async () => {
+      mockGetValidAccessToken.mockResolvedValueOnce(null);
+
+      await expect(createAllDayEvent('calendar-id', 'Test', '2026-01-15', '1')).rejects.toThrow(
+        AuthExpiredError
       );
     });
 
@@ -380,9 +375,9 @@ describe('google-calendar service', () => {
         json: () => Promise.resolve({}),
       });
 
-      await expect(
-        createAllDayEvent('expired-token', 'calendar-id', 'Test', '2026-01-15', '1')
-      ).rejects.toThrow(AuthExpiredError);
+      await expect(createAllDayEvent('calendar-id', 'Test', '2026-01-15', '1')).rejects.toThrow(
+        AuthExpiredError
+      );
       expect(mockLogout).toHaveBeenCalled();
     });
 
@@ -394,17 +389,17 @@ describe('google-calendar service', () => {
         json: () => Promise.resolve({ error: { message: 'Invalid date' } }),
       });
 
-      await expect(
-        createAllDayEvent('test-token', 'calendar-id', 'Test', 'invalid', '1')
-      ).rejects.toThrow(GoogleCalendarError);
+      await expect(createAllDayEvent('calendar-id', 'Test', 'invalid', '1')).rejects.toThrow(
+        GoogleCalendarError
+      );
     });
 
     it('wraps network errors', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Timeout'));
 
-      await expect(
-        createAllDayEvent('test-token', 'calendar-id', 'Test', '2026-01-15', '1')
-      ).rejects.toThrow('Failed to create event: Timeout');
+      await expect(createAllDayEvent('calendar-id', 'Test', '2026-01-15', '1')).rejects.toThrow(
+        'Failed to create event: Timeout'
+      );
     });
   });
 
@@ -415,10 +410,9 @@ describe('google-calendar service', () => {
         status: 204,
       });
 
-      await expect(
-        deleteEvent('test-token', 'calendar-id', 'event-id')
-      ).resolves.toBeUndefined();
+      await expect(deleteEvent('calendar-id', 'event-id')).resolves.toBeUndefined();
 
+      expect(mockGetValidAccessToken).toHaveBeenCalled();
       expect(mockFetch).toHaveBeenCalledWith(
         'https://www.googleapis.com/calendar/v3/calendars/calendar-id/events/event-id',
         expect.objectContaining({
@@ -433,12 +427,18 @@ describe('google-calendar service', () => {
         status: 204,
       });
 
-      await deleteEvent('test-token', 'user@example.com', 'event@id');
+      await deleteEvent('user@example.com', 'event@id');
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/calendars/user%40example.com/events/event%40id'),
         expect.any(Object)
       );
+    });
+
+    it('throws AuthExpiredError when no valid token available', async () => {
+      mockGetValidAccessToken.mockResolvedValueOnce(null);
+
+      await expect(deleteEvent('calendar-id', 'event-id')).rejects.toThrow(AuthExpiredError);
     });
 
     it('throws AuthExpiredError and logs out on 401', async () => {
@@ -449,9 +449,7 @@ describe('google-calendar service', () => {
         json: () => Promise.resolve({}),
       });
 
-      await expect(
-        deleteEvent('expired-token', 'calendar-id', 'event-id')
-      ).rejects.toThrow(AuthExpiredError);
+      await expect(deleteEvent('calendar-id', 'event-id')).rejects.toThrow(AuthExpiredError);
       expect(mockLogout).toHaveBeenCalled();
     });
 
@@ -463,17 +461,15 @@ describe('google-calendar service', () => {
         json: () => Promise.resolve({ error: { message: 'Event not found' } }),
       });
 
-      await expect(
-        deleteEvent('test-token', 'calendar-id', 'nonexistent')
-      ).rejects.toThrow(GoogleCalendarError);
+      await expect(deleteEvent('calendar-id', 'nonexistent')).rejects.toThrow(GoogleCalendarError);
     });
 
     it('wraps network errors', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Network unavailable'));
 
-      await expect(
-        deleteEvent('test-token', 'calendar-id', 'event-id')
-      ).rejects.toThrow('Failed to delete event: Network unavailable');
+      await expect(deleteEvent('calendar-id', 'event-id')).rejects.toThrow(
+        'Failed to delete event: Network unavailable'
+      );
     });
   });
 
@@ -486,9 +482,9 @@ describe('google-calendar service', () => {
         json: () => Promise.reject(new Error('Invalid JSON')),
       });
 
-      await expect(
-        listEvents('test-token', 'calendar-id', '2026-01-01', '2026-01-31')
-      ).rejects.toThrow(GoogleCalendarError);
+      await expect(listEvents('calendar-id', '2026-01-01', '2026-01-31')).rejects.toThrow(
+        GoogleCalendarError
+      );
     });
 
     it('preserves GoogleCalendarError when re-thrown', async () => {
@@ -496,7 +492,7 @@ describe('google-calendar service', () => {
       mockFetch.mockRejectedValueOnce(originalError);
 
       try {
-        await listEvents('test-token', 'calendar-id', '2026-01-01', '2026-01-31');
+        await listEvents('calendar-id', '2026-01-01', '2026-01-31');
       } catch (error) {
         expect(error).toBe(originalError);
       }
@@ -507,7 +503,7 @@ describe('google-calendar service', () => {
       mockFetch.mockRejectedValueOnce(originalError);
 
       try {
-        await listEvents('test-token', 'calendar-id', '2026-01-01', '2026-01-31');
+        await listEvents('calendar-id', '2026-01-01', '2026-01-31');
       } catch (error) {
         expect(error).toBe(originalError);
         expect(error).toBeInstanceOf(AuthExpiredError);

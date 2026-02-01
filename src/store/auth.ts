@@ -75,7 +75,7 @@ export const useAuthStore = create<AuthState>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
+        // refreshToken is stored in SecureStore, not persisted here
         expiresAt: state.expiresAt,
         user: state.user,
         isAuthenticated: state.isAuthenticated,
