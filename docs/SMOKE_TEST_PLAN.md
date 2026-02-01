@@ -4,8 +4,8 @@
 
 This document defines the smoke test plan for browser-based testing of the Cairn habits app. These tests are executed manually or via Chrome automation to verify the app works correctly in a real browser environment.
 
-**Last executed:** Never
-**Last updated:** 2026-01-31
+**Last executed:** 2026-02-01
+**Last updated:** 2026-02-01
 **App URL:** http://localhost:8081
 
 ---
@@ -23,16 +23,16 @@ Before running smoke tests:
 
 | Test ID | Test Name | Status | Last Run | Notes |
 |---------|-----------|--------|----------|-------|
-| ST-001 | App loads successfully | ⬜ Not run | - | - |
-| ST-002 | Login page displays correctly | ⬜ Not run | - | - |
-| ST-003 | Google OAuth flow works | ⬜ Not run | - | - |
-| ST-004 | Calendar displays after login | ⬜ Not run | - | - |
-| ST-005 | Calendar navigation works | ⬜ Not run | - | - |
-| ST-006 | Sign out works | ⬜ Not run | - | - |
-| ST-007 | Session persistence works | ⬜ Not run | - | - |
-| ST-008 | Error boundary catches errors | ⬜ Not run | - | - |
-| ST-009 | 401 error triggers logout | ⬜ Not run | - | - |
-| ST-010 | Calendar events display | ⬜ Not run | - | - |
+| ST-001 | App loads successfully | ✅ Passed | 2026-02-01 | App loaded, calendar displayed |
+| ST-002 | Login page displays correctly | ✅ Passed | 2026-02-01 | All elements visible (logo, title, button) |
+| ST-003 | Google OAuth flow works | ✅ Passed | 2026-02-01 | OAuth popup, redirect to home |
+| ST-004 | Calendar displays after login | ✅ Passed | 2026-02-01 | Greeting, calendar, FAB all visible |
+| ST-005 | Calendar navigation works | ✅ Passed | 2026-02-01 | Jan→Feb→Mar navigation successful |
+| ST-006 | Sign out works | ✅ Passed | 2026-02-01 | Redirects to login page |
+| ST-007 | Session persistence works | ✅ Passed | 2026-02-01 | Stays logged in after refresh |
+| ST-008 | Error boundary catches errors | ⏭️ Skipped | 2026-02-01 | Requires error injection |
+| ST-009 | 401 error triggers logout | ⏭️ Skipped | 2026-02-01 | Observed working (auto-logout on expired token) |
+| ST-010 | Calendar events display | ⏭️ Skipped | 2026-02-01 | No events in calendar to verify |
 
 **Legend:** ✅ Passed | ❌ Failed | ⬜ Not run | ⏭️ Skipped
 
