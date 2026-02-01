@@ -3,10 +3,16 @@ import { Stack, useRouter } from 'expo-router';
 import { useAuthStore } from '../src/store/auth';
 import { useGoogleAuth } from '../src/services/google-auth';
 import { MonthView } from '../src/components/Calendar';
-import { getOrCreateCairnCalendar, listEvents } from '../src/services/google-calendar';
+import ActivityPicker from '../src/components/ActivityPicker';
+import {
+  getOrCreateCairnCalendar,
+  listEvents,
+  createAllDayEvent,
+} from '../src/services/google-calendar';
 import { useTokenWarning } from '../src/hooks/useTokenWarning';
 import type { CalendarEvent } from '../src/types/calendar';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import type { ActivityTemplate } from '../src/types/activity';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 
 export default function HomeScreen() {
@@ -18,6 +24,19 @@ export default function HomeScreen() {
   const [calendarId, setCalendarId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPickerVisible, setIsPickerVisible] = useState(false);
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup toast timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const today = useMemo(() => new Date(), []);
   const formattedDate = useMemo(
@@ -88,8 +107,64 @@ export default function HomeScreen() {
   );
 
   const handleDayPress = useCallback((_date: string) => {
-    // TODO: Task 006 - Activity registration on day press
+    // TODO: Future enhancement - open activity picker for specific date
   }, []);
+
+  const showToast = useCallback((type: 'success' | 'error', message: string) => {
+    // Clear any existing timeout
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToast({ type, message });
+    // Auto-hide after 3 seconds for success, 5 seconds for errors
+    toastTimeoutRef.current = setTimeout(() => setToast(null), type === 'success' ? 3000 : 5000);
+  }, []);
+
+  const handleActivitySelect = useCallback(
+    async (template: ActivityTemplate) => {
+      if (!calendarId) {
+        showToast('error', 'Calendar not ready. Please wait.');
+        return;
+      }
+
+      setIsCreatingEvent(true);
+      setToast(null);
+
+      try {
+        const todayStr = format(today, 'yyyy-MM-dd');
+        await createAllDayEvent(
+          calendarId,
+          `${template.emoji} ${template.name}`,
+          todayStr,
+          template.colorId
+        );
+
+        // Refresh events to show the new one
+        const monthStart = startOfMonth(today);
+        const monthEnd = endOfMonth(today);
+        const fetchedEvents = await listEvents(
+          calendarId,
+          format(monthStart, 'yyyy-MM-dd'),
+          format(monthEnd, 'yyyy-MM-dd')
+        );
+        setEvents(fetchedEvents);
+
+        setIsPickerVisible(false);
+        showToast('success', `${template.emoji} ${template.name} logged!`);
+      } catch (err) {
+        console.error('Failed to log activity:', err);
+        showToast('error', 'Failed to log activity');
+      } finally {
+        setIsCreatingEvent(false);
+      }
+    },
+    [calendarId, today, showToast]
+  );
+
+  const handleCreateActivity = useCallback(() => {
+    setIsPickerVisible(false);
+    router.push('/activities/edit');
+  }, [router]);
 
   return (
     <View style={styles.container}>
@@ -165,9 +240,34 @@ export default function HomeScreen() {
       </View>
 
       {/* Floating Add Button */}
-      <Pressable style={styles.fab}>
+      <Pressable
+        style={styles.fab}
+        onPress={() => setIsPickerVisible(true)}
+        testID="fab-button"
+        accessibilityRole="button"
+        accessibilityLabel="Log activity"
+      >
         <Text style={styles.fabText}>+</Text>
       </Pressable>
+
+      {/* Activity Picker Modal */}
+      <ActivityPicker
+        visible={isPickerVisible}
+        onSelect={handleActivitySelect}
+        onClose={() => setIsPickerVisible(false)}
+        onCreateActivity={handleCreateActivity}
+        isLoading={isCreatingEvent}
+      />
+
+      {/* Toast Notification */}
+      {toast && (
+        <View
+          style={[styles.toast, toast.type === 'error' ? styles.toastError : styles.toastSuccess]}
+          testID={toast.type === 'error' ? 'error-toast' : 'success-toast'}
+        >
+          <Text style={styles.toastText}>{toast.message}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -287,6 +387,27 @@ const styles = StyleSheet.create({
   warningButtonText: {
     color: '#fff',
     fontSize: 14,
+    fontWeight: '500',
+  },
+  toast: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  toastSuccess: {
+    backgroundColor: '#059669',
+  },
+  toastError: {
+    backgroundColor: '#DC2626',
+  },
+  toastText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '500',
   },
 });
