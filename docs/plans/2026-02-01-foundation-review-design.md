@@ -268,6 +268,7 @@ Chain 5 (Features - Main, after all above):
 |---|------|----------|--------|
 | 3 | Fix pre-commit hook to run tests | P0 | 5 min |
 | 4 | Add CI pipeline with GitHub Actions | P0 | 30 min |
+| 23 | Configure GitHub branch protection for master | P0 | 15 min |
 | 13 | Remove hardcoded credential fallback | P0 | 10 min |
 | 10 | Delete BACKLOG.md and update references | P1 | 5 min |
 | 11 | Fix false claims in DEVELOPMENT.md | P1 | 15 min |

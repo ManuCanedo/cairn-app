@@ -157,6 +157,94 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 ---
 
+### Task 23: Configure GitHub Branch Protection for Master
+
+**Files:**
+
+- Remote configuration via `gh` CLI or browser
+
+**Prerequisites:**
+
+- Task 4 (CI Pipeline) must be complete and pushed
+- Repository must be pushed to GitHub
+
+**Step 1: Get repository info**
+
+```bash
+gh repo view --json nameWithOwner -q '.nameWithOwner'
+```
+
+**Step 2: Configure branch protection via gh CLI**
+
+```bash
+# Enable branch protection requiring PRs and status checks
+gh api repos/{owner}/{repo}/branches/master/protection -X PUT \
+  -H "Accept: application/vnd.github+json" \
+  --input - << 'EOF'
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["test"]
+  },
+  "enforce_admins": false,
+  "required_pull_request_reviews": {
+    "required_approving_review_count": 0,
+    "dismiss_stale_reviews": false
+  },
+  "restrictions": null
+}
+EOF
+```
+
+**Step 3: Verify protection is active**
+
+```bash
+gh api repos/{owner}/{repo}/branches/master/protection \
+  -H "Accept: application/vnd.github+json" | jq '.required_pull_request_reviews'
+```
+
+Expected: Shows `required_approving_review_count` configured.
+
+**Step 4: Test protection works**
+
+```bash
+# Try direct push (should fail)
+echo "test" >> test-protection.txt
+git add test-protection.txt
+git commit -m "test: verify branch protection"
+git push origin master
+```
+
+Expected: Push rejected with message about requiring PR.
+
+**Step 5: Clean up test**
+
+```bash
+git reset --hard HEAD~1
+```
+
+**Alternative: Browser Automation (if gh CLI lacks permissions)**
+
+If the gh CLI returns 403 Forbidden, use Chrome browser automation:
+
+1. Navigate to: `https://github.com/{owner}/{repo}/settings/branches`
+2. Click "Add branch protection rule"
+3. Branch name pattern: `master`
+4. Enable:
+   - [x] Require a pull request before merging
+   - [x] Require status checks to pass before merging
+   - [x] Require branches to be up to date before merging
+   - Select status check: `test`
+5. Click "Create" or "Save changes"
+
+**Acceptance Criteria:**
+
+- [ ] Direct push to master is blocked
+- [ ] PRs are required for all changes
+- [ ] CI status check must pass before merge
+
+---
+
 ### Task 13: Remove Hardcoded Credential Fallback
 
 **Files:**
@@ -692,7 +780,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 Add at the top of DEV_TASKS.md after the intro:
 
-````markdown
+`````markdown
 ## Task Template
 
 Use this template for all new tasks:
@@ -740,15 +828,18 @@ Use this template for all new tasks:
 npm run typecheck && npm test && npm run lint
 ```
 ````
-````
+`````
+
+```
 
 ### Rollback Plan
 
 If task fails: `git reset --hard pre-task-XXX`
 Files to delete if abandoning: [list files]
 
-````
 ```
+
+````
 
 **Step 2: Update existing pending tasks (005-007) with new sections**
 
@@ -771,13 +862,14 @@ New sections for AI agent clarity:
 Updated pending tasks 005-007 with new sections.
 
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
-```
+````
 
 ---
 
 ### Task 21: Establish Feature Branch Workflow
 
 **Files:**
+
 - Modify: `docs/AGENT_WORKFLOW.md` (already created)
 - Create: `.github/PULL_REQUEST_TEMPLATE.md`
 
@@ -838,6 +930,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ### Task 22: Map Task Dependencies
 
 **Files:**
+
 - Create: `docs/plans/task-dependencies.md`
 
 **Step 1: Create dependency map**
@@ -848,8 +941,8 @@ Create `docs/plans/task-dependencies.md`:
 # Task Dependency Map
 
 ## Dependency Graph
-
 ```
+
 Independent (can run in parallel):
 ├── Task 003: Pre-commit hook
 ├── Task 004: CI pipeline
@@ -864,23 +957,24 @@ Independent (can run in parallel):
 
 Sequential Chain A (Testing):
 Task 003 (pre-commit)
-  └── Task 006 (integration test)
-      └── Task 008 (remove gaming tests)
+└── Task 006 (integration test)
+└── Task 008 (remove gaming tests)
 
 Sequential Chain B (Auth):
 Task 016 (token refresh)
-  └── Task 017 (iOS/Android OAuth)
+└── Task 017 (iOS/Android OAuth)
 
 Sequential Chain C (Features):
 Task 005 (Activity Templates)
-  └── Task 006 (Registration Flow)
-      └── Task 007 (Polish)
+└── Task 006 (Registration Flow)
+└── Task 007 (Polish)
 
 Dependencies on multiple:
 Task 009 (AI test rules) ← depends on Tasks 006, 008
 Task 020 (update template) ← should follow 019
 Task 022 (this document) ← should follow 019, 020
-```
+
+````
 
 ## Execution Strategy
 
@@ -888,20 +982,23 @@ Task 022 (this document) ← should follow 019, 020
 ```bash
 git worktree add ../habits-fixes -b fixes/foundation
 # Tasks: 003, 004, 010, 011, 012, 013, 014, 015
-```
+````
 
 ### Main Worktree: Workflow Setup
+
 ```bash
 # Tasks: 019, 020, 021, 022
 ```
 
 ### Parallel Worktree 2: Testing Infrastructure
+
 ```bash
 git worktree add ../habits-testing -b feature/testing
 # Tasks: 006, 007, 008, 009
 ```
 
 ### Parallel Worktree 3: Auth Chain
+
 ```bash
 git worktree add ../habits-auth -b feature/auth
 # Tasks: 016, 017
@@ -914,7 +1011,8 @@ git worktree add ../habits-auth -b feature/auth
 3. feature/testing → main
 4. feature/auth → main
 5. Begin feature work (005 → 006 → 007)
-```
+
+````
 
 **Step 2: Commit dependency map**
 
@@ -929,7 +1027,7 @@ Maps all task dependencies for parallel execution:
 - Merge order specified
 
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
-```
+````
 
 ---
 
@@ -938,6 +1036,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ### Task 6: Add First Integration Test (Auth Persistence)
 
 **Files:**
+
 - Create: `src/__tests__/integration/auth-persistence.test.ts`
 
 **Step 1: Create integration test directory**
@@ -1092,6 +1191,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ### Task 7: Add Playwright E2E Test Setup
 
 **Files:**
+
 - Create: `playwright.config.ts`
 - Create: `e2e/login-flow.spec.ts`
 - Modify: `package.json`
@@ -1216,6 +1316,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ### Task 8: Remove Coverage-Gaming Tests
 
 **Files:**
+
 - Modify: `src/__tests__/components/Calendar/index.test.ts`
 
 **Step 1: Identify coverage-gaming tests**
@@ -1227,6 +1328,7 @@ cat src/__tests__/components/Calendar/index.test.ts
 **Step 2: Remove or replace tests that only check existence**
 
 If the file only contains tests like:
+
 ```typescript
 it('exports MonthView', () => {
   expect(MonthView).toBeDefined();
@@ -1277,13 +1379,14 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ### Task 9: Add AI Agent Test Quality Rules
 
 **Files:**
+
 - Modify: `docs/DEVELOPMENT.md`
 
 **Step 1: Add test quality rules section**
 
 Add to `docs/DEVELOPMENT.md`:
 
-```markdown
+````markdown
 ## Test Requirements for AI Agents
 
 When writing tests, AI agents MUST follow these rules:
@@ -1291,13 +1394,16 @@ When writing tests, AI agents MUST follow these rules:
 ### 1. No Coverage-Only Tests
 
 **Bad:**
+
 ```typescript
 it('exports MonthView', () => {
   expect(MonthView).toBeDefined();
 });
 ```
+````
 
 **Good:**
+
 ```typescript
 it('renders current month by default', () => {
   render(<MonthView events={[]} onMonthChange={jest.fn()} />);
@@ -1310,6 +1416,7 @@ it('renders current month by default', () => {
 Mock external services (fetch, AsyncStorage, expo modules), NOT internal components.
 
 **Bad:**
+
 ```typescript
 jest.mock('../../components/Calendar', () => ({
   MonthView: () => <div>Mocked</div>,
@@ -1317,6 +1424,7 @@ jest.mock('../../components/Calendar', () => ({
 ```
 
 **Good:**
+
 ```typescript
 // Mock the fetch call, not the component
 global.fetch = jest.fn().mockResolvedValue({
@@ -1330,11 +1438,13 @@ global.fetch = jest.fn().mockResolvedValue({
 Use accessible queries that reflect how users interact.
 
 **Bad:**
+
 ```typescript
 screen.getByTestId('submit-button');
 ```
 
 **Good:**
+
 ```typescript
 screen.getByRole('button', { name: /sign in/i });
 ```
@@ -1381,7 +1491,8 @@ it('updates calendar when month changes', async () => {
 - Unit tests: `src/__tests__/[path]/[filename].test.ts`
 - Integration tests: `src/__tests__/integration/[feature].test.ts`
 - E2E tests: `e2e/[flow].spec.ts`
-```
+
+````
 
 **Step 2: Commit rules**
 
@@ -1398,7 +1509,7 @@ Rules to ensure meaningful tests:
 6. Test file naming conventions
 
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
-```
+````
 
 ---
 
@@ -1407,6 +1518,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ### Task 16: Implement Token Refresh Mechanism
 
 **Files:**
+
 - Create: `src/services/token-storage.ts`
 - Create: `src/services/token-refresh.ts`
 - Create: `src/hooks/useTokenWarning.ts`
@@ -1466,7 +1578,11 @@ Create `src/__tests__/services/token-storage.test.ts`:
 ```typescript
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { storeRefreshToken, getRefreshToken, deleteRefreshToken } from '../../services/token-storage';
+import {
+  storeRefreshToken,
+  getRefreshToken,
+  deleteRefreshToken,
+} from '../../services/token-storage';
 
 jest.mock('expo-secure-store');
 
@@ -1482,10 +1598,7 @@ describe('token-storage', () => {
 
     it('stores refresh token in SecureStore', async () => {
       await storeRefreshToken('test-token');
-      expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
-        'cairn_refresh_token',
-        'test-token'
-      );
+      expect(SecureStore.setItemAsync).toHaveBeenCalledWith('cairn_refresh_token', 'test-token');
     });
 
     it('retrieves refresh token from SecureStore', async () => {
@@ -1561,6 +1674,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ### Task 17: Configure iOS and Android OAuth Credentials
 
 **Files:**
+
 - Modify: `app.config.js`
 - Modify: `.env.example`
 - Modify: `.env`
@@ -1615,6 +1729,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ### Task 1: Fix Architectural Issues
 
 **Files:**
+
 - Modify: `src/services/google-calendar.ts`
 - Create: `src/hooks/useCalendarData.ts`
 - Modify: `app/index.tsx`
@@ -1777,6 +1892,7 @@ npm run test:coverage
 ```
 
 Check documentation accuracy:
+
 - [ ] DEVELOPMENT.md claims match reality
 - [ ] DEV_TASKS.md is fully in English
 - [ ] AGENT_WORKFLOW.md exists
@@ -1784,7 +1900,11 @@ Check documentation accuracy:
 - [ ] BACKLOG.md is deleted
 
 Check CI/CD:
+
 - [ ] `.github/workflows/ci.yml` exists
 - [ ] Pre-commit runs tests
 - [ ] PR template exists
-````
+
+```
+
+```
