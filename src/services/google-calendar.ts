@@ -57,7 +57,9 @@ async function apiRequest<T>(
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
 
-    // Handle 401 Unauthorized - session expired
+    // Architectural tradeoff: logout() is called here for immediate redirect
+    // to login rather than requiring each caller to handle auth expiry.
+    // This coupling ensures consistent UX across all API call sites.
     if (response.status === 401) {
       useAuthStore.getState().logout();
       throw new AuthExpiredError();
