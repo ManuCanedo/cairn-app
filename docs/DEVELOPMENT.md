@@ -15,7 +15,7 @@
 | Type | Minimum Coverage |
 |------|------------------|
 | Unit Tests | 100% |
-| Integration Tests | 80% |
+| Integration Tests | 0% (not yet implemented) |
 | E2E Tests (future) | Critical paths |
 
 ### TDD Workflow
@@ -294,9 +294,12 @@ Before committing any code:
 
 ## CI/CD Integration
 
+> **NOTE**: CI/CD pipeline is implemented via GitHub Actions.
+> See `.github/workflows/ci.yml` for configuration.
+
 Tests run automatically on:
-- Every push
-- Every pull request
+- Every push to main/master
+- Every pull request to main/master
 
 Pipeline fails if:
 - Any test fails
