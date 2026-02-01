@@ -1,9 +1,10 @@
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect } from 'react';
-import type { User } from '../store/auth';
-import { useAuthStore } from '../store/auth';
+import { Platform } from 'react-native';
+import { useAuthStore, type User } from '../store/auth';
 import { GOOGLE_CLIENT_ID, GOOGLE_SCOPES } from '../config/constants';
+import { storeRefreshToken, deleteRefreshToken } from './token-storage';
 
 // Required for web browser auth session
 WebBrowser.maybeCompleteAuthSession();
@@ -14,16 +15,23 @@ export function useGoogleAuth() {
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: GOOGLE_CLIENT_ID,
     scopes: [...GOOGLE_SCOPES],
+    // Request offline access on native to get refresh tokens
+    ...(Platform.OS !== 'web' && { accessType: 'offline' }),
   });
 
   useEffect(() => {
     if (response?.type === 'success') {
       const { authentication } = response;
       if (authentication?.accessToken) {
+        // Store refresh token in SecureStore on native platforms
+        if (authentication.refreshToken) {
+          storeRefreshToken(authentication.refreshToken);
+        }
+
         fetchUserInfo(authentication.accessToken).then((userInfo) => {
           setAuth({
             accessToken: authentication.accessToken,
-            refreshToken: authentication.refreshToken ?? null,
+            refreshToken: null, // Refresh token stored in SecureStore, not in state
             expiresAt: authentication.expiresIn
               ? Date.now() + authentication.expiresIn * 1000
               : null,
@@ -48,6 +56,7 @@ export function useGoogleAuth() {
   };
 
   const signOut = () => {
+    deleteRefreshToken(); // Clear refresh token from SecureStore
     logout();
   };
 
