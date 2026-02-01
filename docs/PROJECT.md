@@ -1,135 +1,143 @@
 # Cairn
 
-> *A cairn is a stack of stones marking a path or summit. Each stone you add marks your journey.*
+> _A cairn is a stack of stones marking a path or summit. Each stone you add marks your journey._
 
-App móvil minimalista para visualizar y registrar tus actividades positivas usando Google Calendar como backend.
+Minimalist mobile app to visualize and record your positive activities using Google Calendar as a backend.
 
-## Visión
+## Vision
 
-Una app donde defines tus actividades de bienestar (templates) y las registras día a día. El calendario muestra de un vistazo, con colores, cómo te has cuidado ese mes. Sin gamificación excesiva, sin notificaciones agresivas. Solo lo esencial para crear consistencia y consciencia.
+An app where you define your wellness activities (templates) and record them day by day. The calendar shows at a glance, with colors, how you've taken care of yourself that month. No excessive gamification, no aggressive notifications. Just the essentials to create consistency and awareness.
 
-Cada actividad que registras es una piedra más en tu cairn personal.
+Each activity you record is another stone in your personal cairn.
 
-## Concepto Core
+## Core Concept
 
-1. **Login con Google** → Acceso a tu calendario
-2. **Calendario "Cairn"** → Se crea automáticamente en tu Google Calendar
-3. **Templates de actividades** → Defines una vez tus actividades positivas (Meditar, Ejercicio, Leer...)
-4. **Registro rápido** → Botón + para añadir una actividad al día actual (evento de día completo)
-5. **Vista de calendario** → Ves el mes con colores según las actividades realizadas
+1. **Login with Google** → Access to your calendar
+2. **"Cairn" Calendar** → Automatically created in your Google Calendar
+3. **Activity templates** → Define your positive activities once (Meditate, Exercise, Read...)
+4. **Quick registration** → + button to add an activity to the current day (all-day event)
+5. **Calendar view** → See the month with colors based on completed activities
 
-## Stack Técnico
+## Tech Stack
 
-| Capa | Tecnología | Justificación |
-|------|------------|---------------|
-| Framework | React Native + Expo SDK 54 | Cross-platform con componentes nativos reales |
-| Lenguaje | TypeScript | Type safety, mejor DX con IA |
-| Navegación | Expo Router | File-based routing, simple y escalable |
-| Auth | expo-auth-session + Google OAuth | Login con Google, acceso a Calendar API |
-| Backend | Google Calendar API | Sin servidor propio, los datos viven en el calendario del usuario |
-| Estado local | Zustand | Cache de templates, estado de UI |
-| Persistencia local | AsyncStorage | Cache de templates de actividades |
-| UI | React Native core | Componentes nativos, look & feel nativo |
+| Layer             | Technology                       | Justification                                |
+| ----------------- | -------------------------------- | -------------------------------------------- |
+| Framework         | React Native + Expo SDK 54       | Cross-platform with real native components   |
+| Language          | TypeScript                       | Type safety, better DX with AI               |
+| Navigation        | Expo Router                      | File-based routing, simple and scalable      |
+| Auth              | expo-auth-session + Google OAuth | Google login, Calendar API access            |
+| Backend           | Google Calendar API              | No own server, data lives in user's calendar |
+| Local state       | Zustand                          | Template cache, UI state                     |
+| Local persistence | AsyncStorage                     | Activity template cache                      |
+| UI                | React Native core                | Native components, native look & feel        |
 
-## Arquitectura
+## Architecture
 
 ```
 cairn/
-├── app/                        # Rutas (expo-router)
-│   ├── _layout.tsx             # Layout raíz + auth check
-│   ├── index.tsx               # Pantalla principal (calendario)
-│   ├── login.tsx               # Pantalla de login
+├── app/                        # Routes (expo-router)
+│   ├── _layout.tsx             # Root layout + auth check
+│   ├── index.tsx               # Main screen (calendar)
+│   ├── login.tsx               # Login screen
 │   └── activities/
-│       ├── index.tsx           # Gestionar templates de actividades
-│       └── add.tsx             # Añadir actividad al día
+│       ├── index.tsx           # Manage activity templates
+│       └── add.tsx             # Add activity to day
 ├── src/
 │   ├── components/
-│   │   ├── Calendar.tsx        # Vista de calendario mensual
-│   │   ├── ActivityPicker.tsx  # Selector de actividad (botón +)
-│   │   └── DayCell.tsx         # Celda del calendario con colores
+│   │   ├── Calendar.tsx        # Monthly calendar view
+│   │   ├── ActivityPicker.tsx  # Activity selector (+ button)
+│   │   └── DayCell.tsx         # Calendar cell with colors
 │   ├── services/
-│   │   ├── google-auth.ts      # Lógica de OAuth con Google
-│   │   └── google-calendar.ts  # CRUD con Google Calendar API
+│   │   ├── google-auth.ts      # Google OAuth logic
+│   │   └── google-calendar.ts  # Google Calendar API CRUD
 │   ├── store/
-│   │   ├── auth.ts             # Estado de autenticación
-│   │   └── activities.ts       # Templates de actividades
+│   │   ├── auth.ts             # Authentication state
+│   │   └── activities.ts       # Activity templates
 │   └── types/
-│       ├── activity.ts         # Tipos de actividades
-│       └── calendar.ts         # Tipos de eventos de calendario
+│       ├── activity.ts         # Activity types
+│       └── calendar.ts         # Calendar event types
 ├── assets/
 └── docs/
 ```
 
-## Flujo de Usuario
+## User Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  1. PRIMER USO                                               │
+│  1. FIRST USE                                                │
 │  ┌─────────┐    ┌─────────────┐    ┌──────────────────────┐ │
-│  │  Login  │ → │  Crear      │ → │  Definir actividades │ │
-│  │  Google │    │  calendario │    │  positivas (templates)│ │
-│  └─────────┘    │  "Cairn"    │    └──────────────────────┘ │
-│                 └─────────────┘                              │
+│  │  Login  │ → │  Create     │ → │  Define positive     │ │
+│  │  Google │    │  "Cairn"    │    │  activities          │ │
+│  └─────────┘    │  calendar   │    │  (templates)         │ │
+│                 └─────────────┘    └──────────────────────┘ │
 ├─────────────────────────────────────────────────────────────┤
-│  2. USO DIARIO                                               │
+│  2. DAILY USE                                                │
 │  ┌─────────────┐    ┌─────────┐    ┌────────────────────┐   │
-│  │  Ver        │ → │  Pulsar │ → │  Seleccionar       │   │
-│  │  calendario │    │    +    │    │  actividad hecha   │   │
+│  │  View       │ → │  Press  │ → │  Select completed  │   │
+│  │  calendar   │    │    +    │    │  activity          │   │
 │  └─────────────┘    └─────────┘    └────────────────────┘   │
 │         │                                    │               │
 │         └────────────────────────────────────┘               │
-│                   Se añade al calendario                     │
+│                   Added to calendar                          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Decisiones Técnicas
+## Technical Decisions
 
-### 2025-01-31: Nombre "Cairn"
-- **Decisión**: Nombrar la app "Cairn" (montículo de piedras que marca caminos)
-- **Razón**: Metáfora visual perfecta - cada hábito/actividad es una piedra que marca tu progreso. Minimalista, único, memorable.
+### 2025-01-31: Name "Cairn"
 
-### 2025-01-31: Stack inicial
-- **Decisión**: React Native + Expo sobre Flutter o Ionic
-- **Razón**: Mejor ecosistema para desarrollo con IA, componentes nativos reales
+- **Decision**: Name the app "Cairn" (stone pile that marks paths)
+- **Reason**: Perfect visual metaphor - each habit/activity is a stone that marks your progress. Minimalist, unique, memorable.
 
-### 2025-01-31: Google Calendar como backend
-- **Decisión**: Usar Google Calendar API en lugar de backend propio
-- **Razón**: Sin infraestructura que mantener, datos en control del usuario, sincronización automática con otros dispositivos/apps de calendario
+### 2025-01-31: Initial stack
 
-### 2025-01-31: Eventos de día completo
-- **Decisión**: Las actividades se registran como eventos de día completo (all-day events)
-- **Razón**: Simplicidad, no importa la hora exacta sino que se hizo. Permite vista de "colores" en el mes.
+- **Decision**: React Native + Expo over Flutter or Ionic
+- **Reason**: Better ecosystem for AI-assisted development, real native components
 
-### 2025-01-31: Templates locales + eventos en cloud
-- **Decisión**: Los templates de actividades se guardan localmente (AsyncStorage), los registros van a Google Calendar
-- **Razón**: Los templates son configuración personal rápida, los registros necesitan persistencia cloud
+### 2025-01-31: Google Calendar as backend
 
-## Setup para desarrollo
+- **Decision**: Use Google Calendar API instead of own backend
+- **Reason**: No infrastructure to maintain, data under user control, automatic sync with other devices/calendar apps
 
-### 1. Google Cloud Console (necesario)
+### 2025-01-31: All-day events
+
+- **Decision**: Activities are recorded as all-day events
+- **Reason**: Simplicity, exact time doesn't matter, just that it was done. Enables "color" view for the month.
+
+### 2025-01-31: Local templates + cloud events
+
+- **Decision**: Activity templates saved locally (AsyncStorage), records go to Google Calendar
+- **Reason**: Templates are quick personal config, records need cloud persistence
+
+## Development Setup
+
+### 1. Google Cloud Console (required)
+
 ```
-1. Crear proyecto en console.cloud.google.com (nombre: "Cairn")
-2. Habilitar Google Calendar API
-3. Crear credenciales OAuth 2.0 (tipo: aplicación web/iOS/Android)
-4. Configurar pantalla de consentimiento OAuth
-5. Añadir scopes: calendar.events, calendar.calendars
+1. Create project at console.cloud.google.com (name: "Cairn")
+2. Enable Google Calendar API
+3. Create OAuth 2.0 credentials (type: web/iOS/Android app)
+4. Configure OAuth consent screen
+5. Add scopes: calendar.events, calendar.calendars
 ```
 
-### 2. Variables de entorno
+### 2. Environment variables
+
 ```bash
-# .env (no commitear)
-EXPO_PUBLIC_GOOGLE_CLIENT_ID=tu-client-id.apps.googleusercontent.com
-EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS=tu-client-id-ios.apps.googleusercontent.com
-EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID=tu-client-id-android.apps.googleusercontent.com
+# .env (don't commit)
+EXPO_PUBLIC_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS=your-ios-client-id.apps.googleusercontent.com
+EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID=your-android-client-id.apps.googleusercontent.com
 ```
 
-### 3. Comandos
+### 3. Commands
+
 ```bash
-npm run web      # Desarrollo en navegador
-npm run ios      # iOS (Expo Go o simulador)
-npm run android  # Android (Expo Go o emulador)
+npm run web      # Development in browser
+npm run ios      # iOS (Expo Go or simulator)
+npm run android  # Android (Expo Go or emulator)
 ```
 
-## Próximos pasos
+## Next Steps
 
 See [GitHub Issues](https://github.com/ManuCanedo/cairn-app/issues) for pending tasks and features.
