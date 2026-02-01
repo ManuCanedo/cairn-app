@@ -12,6 +12,7 @@ module.exports = {
     '!**/*.d.ts',
     '!**/node_modules/**',
     '!**/__tests__/**',
+    '!**/index.ts', // Barrel exports only - no logic to test
   ],
   coverageThreshold: {
     global: {
