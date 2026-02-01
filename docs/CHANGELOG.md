@@ -1,25 +1,25 @@
 # Changelog
 
-Todos los cambios notables del proyecto se documentan aquí.
+All notable changes to this project are documented here.
 
 ## [Unreleased]
 
-_Cambios pendientes de release_
+_Changes pending release_
 
 ## [0.1.0] - 2025-01-31
 
-### Añadido
+### Added
 
-- Setup inicial del proyecto con Expo SDK 54 y TypeScript
-- Navegación con expo-router (file-based routing)
-- Store de Zustand con persistencia en AsyncStorage
-- Pantalla principal con lista de hábitos
-- Componente HabitItem con toggle de completado
-- Input para añadir nuevos hábitos
-- UI minimalista con colores indigo/verde
+- Initial project setup with Expo SDK 54 and TypeScript
+- Navigation with expo-router (file-based routing)
+- Zustand store with AsyncStorage persistence
+- Main screen with habits list
+- HabitItem component with completion toggle
+- Input for adding new habits
+- Minimalist UI with indigo/green colors
 - Documentation structure (PROJECT.md, DEV_TASKS.md, CHANGELOG.md)
 
-### Técnico
+### Technical
 
-- Configuración de TypeScript strict mode
-- Estructura de carpetas: app/, src/components, src/store, src/types
+- TypeScript strict mode configuration
+- Folder structure: app/, src/components, src/store, src/types
