@@ -1,7 +1,12 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useAuthStore } from '../../store/auth';
+import { useActivitiesStore } from '../../store/activities';
 import { useGoogleAuth } from '../../services/google-auth';
-import { getOrCreateCairnCalendar, listEvents } from '../../services/google-calendar';
+import {
+  getOrCreateCairnCalendar,
+  listEvents,
+  createAllDayEvent,
+} from '../../services/google-calendar';
 import HomeScreen from '../../../app/index';
 
 // Mock expo-router
@@ -24,6 +29,46 @@ jest.mock('../../services/google-auth', () => ({
 jest.mock('../../services/google-calendar', () => ({
   getOrCreateCairnCalendar: jest.fn(),
   listEvents: jest.fn(),
+  createAllDayEvent: jest.fn(),
+}));
+
+// Mock ActivityPicker component
+jest.mock('../../components/ActivityPicker', () => {
+  const MockActivityPicker = ({
+    visible,
+    onSelect,
+    onClose,
+  }: {
+    visible: boolean;
+    onSelect: (template: { id: string; name: string; emoji: string; colorId: string }) => void;
+    onClose: () => void;
+  }) => {
+    if (!visible) return null;
+    return (
+      <div data-testid="activity-picker">
+        <button
+          data-testid="select-activity-btn"
+          onClick={() => onSelect({ id: '1', name: 'Meditate', emoji: '🧘', colorId: '7' })}
+        >
+          Select Activity
+        </button>
+        <button data-testid="close-picker-btn" onClick={onClose}>
+          Close
+        </button>
+      </div>
+    );
+  };
+  return { __esModule: true, default: MockActivityPicker };
+});
+
+// Mock AsyncStorage (needed for activities store)
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
+
+// Mock expo-crypto
+jest.mock('expo-crypto', () => ({
+  randomUUID: jest.fn(() => 'test-uuid'),
 }));
 
 // Mock MonthView component with data-testid for web testing
@@ -85,6 +130,7 @@ describe('HomeScreen', () => {
 
     (getOrCreateCairnCalendar as jest.Mock).mockResolvedValue('test-calendar-id');
     (listEvents as jest.Mock).mockResolvedValue([]);
+    (createAllDayEvent as jest.Mock).mockResolvedValue({ id: 'new-event-id' });
 
     useAuthStore.setState({
       accessToken: 'test-token',
@@ -94,6 +140,8 @@ describe('HomeScreen', () => {
       isLoading: false,
       isAuthenticated: true,
     });
+
+    useActivitiesStore.setState({ templates: [] });
   });
 
   describe('rendering', () => {
@@ -294,6 +342,126 @@ describe('HomeScreen', () => {
       fireEvent.click(signOutButton);
 
       expect(mockSignOut).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('activity registration', () => {
+    it('opens activity picker when FAB is pressed', async () => {
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument();
+      });
+
+      const fab = screen.getByTestId('fab-button');
+      fireEvent.click(fab);
+
+      expect(screen.getByTestId('activity-picker')).toBeInTheDocument();
+    });
+
+    it('closes activity picker when close button is pressed', async () => {
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument();
+      });
+
+      // Open picker
+      fireEvent.click(screen.getByTestId('fab-button'));
+      expect(screen.getByTestId('activity-picker')).toBeInTheDocument();
+
+      // Close picker
+      fireEvent.click(screen.getByTestId('close-picker-btn'));
+      expect(screen.queryByTestId('activity-picker')).not.toBeInTheDocument();
+    });
+
+    it('creates event when activity is selected', async () => {
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument();
+      });
+
+      // Open picker and select activity
+      fireEvent.click(screen.getByTestId('fab-button'));
+      fireEvent.click(screen.getByTestId('select-activity-btn'));
+
+      await waitFor(() => {
+        expect(createAllDayEvent).toHaveBeenCalledWith(
+          'test-calendar-id',
+          '🧘 Meditate',
+          expect.any(String), // today's date
+          '7'
+        );
+      });
+    });
+
+    it('refreshes events after activity is logged', async () => {
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument();
+      });
+
+      jest.clearAllMocks();
+
+      // Open picker and select activity
+      fireEvent.click(screen.getByTestId('fab-button'));
+      fireEvent.click(screen.getByTestId('select-activity-btn'));
+
+      await waitFor(() => {
+        expect(listEvents).toHaveBeenCalled();
+      });
+    });
+
+    it('closes picker after activity is logged', async () => {
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument();
+      });
+
+      // Open picker and select activity
+      fireEvent.click(screen.getByTestId('fab-button'));
+      expect(screen.getByTestId('activity-picker')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByTestId('select-activity-btn'));
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('activity-picker')).not.toBeInTheDocument();
+      });
+    });
+
+    it('shows success message after activity is logged', async () => {
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByTestId('fab-button'));
+      fireEvent.click(screen.getByTestId('select-activity-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('success-toast')).toBeInTheDocument();
+      });
+    });
+
+    it('shows error message when event creation fails', async () => {
+      (createAllDayEvent as jest.Mock).mockRejectedValue(new Error('Failed to create'));
+
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByTestId('fab-button'));
+      fireEvent.click(screen.getByTestId('select-activity-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('error-toast')).toBeInTheDocument();
+      });
     });
   });
 });
