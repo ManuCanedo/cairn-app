@@ -5,12 +5,14 @@ import { getOrCreateCairnCalendar, listEvents } from '../../services/google-cale
 import HomeScreen from '../../../app/index';
 
 // Mock expo-router
+const mockRouter = { push: jest.fn() };
 jest.mock('expo-router', () => ({
   Stack: {
     Screen: ({ options }: { options?: { headerRight?: () => React.ReactNode } }) => {
       return options?.headerRight ? options.headerRight() : null;
     },
   },
+  useRouter: () => mockRouter,
 }));
 
 // Mock useGoogleAuth

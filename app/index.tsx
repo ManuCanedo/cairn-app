@@ -1,5 +1,5 @@
 import { View, Text, Pressable, StyleSheet, Image, ActivityIndicator } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useAuthStore } from '../src/store/auth';
 import { useGoogleAuth } from '../src/services/google-auth';
 import { MonthView } from '../src/components/Calendar';
@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
   const { signOut } = useGoogleAuth();
   const { showWarning, minutesRemaining } = useTokenWarning();
@@ -96,9 +97,18 @@ export default function HomeScreen() {
         options={{
           title: 'Cairn',
           headerRight: () => (
-            <Pressable onPress={signOut} style={styles.headerButton} testID="sign-out-button">
-              <Text style={styles.headerButtonText}>Sign Out</Text>
-            </Pressable>
+            <View style={styles.headerButtons}>
+              <Pressable
+                onPress={() => router.push('/activities')}
+                style={styles.headerButton}
+                testID="activities-button"
+              >
+                <Text style={styles.headerButtonText}>Activities</Text>
+              </Pressable>
+              <Pressable onPress={signOut} style={styles.headerButton} testID="sign-out-button">
+                <Text style={styles.headerButtonText}>Sign Out</Text>
+              </Pressable>
+            </View>
           ),
         }}
       />
@@ -166,6 +176,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F9FAFB',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 4,
   },
   headerButton: {
     marginRight: 8,
