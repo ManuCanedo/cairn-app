@@ -1,0 +1,84 @@
+name: Task
+description: Development task for AI agents
+title: "[Task]: "
+labels: ["agent/ready"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for development tasks that AI agents can work on.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why does this task exist? What problem does it solve?
+      placeholder: Describe the background and motivation...
+    validations:
+      required: true
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What should be accomplished? (1-2 sentences)
+      placeholder: The goal is to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: Files to Create/Modify
+      description: List specific files with actions
+      placeholder: |
+        - Create: `src/path/to/file.ts`
+        - Modify: `src/path/to/existing.ts`
+        - Delete: `src/path/to/old.ts`
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How do we know this is done?
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Tests pass: `npm test`
+        - [ ] TypeScript compiles: `npm run typecheck`
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Implementation Notes
+      description: Any additional context, code examples, or references
+      placeholder: See implementation plan at...
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0 - Critical
+        - P1 - High
+        - P2 - Medium
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      options:
+        - feature
+        - bug
+        - docs
+        - test
+        - infra
+        - refactor
+    validations:
+      required: true
